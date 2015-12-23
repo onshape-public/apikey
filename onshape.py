@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import requests, json, string, random, hmac, hashlib, base64, datetime, sys
+import pprint
 
 '''
 The credential file is a JSON file with this format:
@@ -26,8 +27,9 @@ class Onshape():
     Define APIKey interface to Onshape
     '''
 
-    def __init__(self, stackName, credsFile, logging=True):
+    def __init__(self, stackName, credsFile, logging=True, raise_on_fail=True):
         self.logging = logging
+        self.raise_on_fail = raise_on_fail
 
         with open(credsFile) as accounts:
             logins = json.load(accounts)
@@ -69,12 +71,17 @@ class Onshape():
             # todo: add code to create new signed header with updated path and params
             raise ValueError('Redirection not currently handled')
 
+        if (raise_on_fail == None):
+            raise_on_fail = self.raise_on_fail
+
         if (raise_on_fail and resp.status_code != 200):
-            raise ValueError('Unexpected status returned by Onshape.', resp.status_code)
+            result = resp.json()
+            message = 'Unexpected status ' + str(resp.status_code) + ' (' + result['message'] + ')'
+            raise ValueError(message, resp.status_code)
 
         return resp
 
-    def get(self, path, query=[], body={}, headers=[], raise_on_fail=True):
+    def get(self, path, query=[], body={}, headers=[], raise_on_fail=None):
         onshapeHeaders = self.__buildHeaders('get', path, query, body, headers)
         resp = requests.get(self.creds['baseUrl'] + path, params=query, headers=onshapeHeaders, allow_redirects=False)
         return self.__logAndReturn(resp, raise_on_fail)
