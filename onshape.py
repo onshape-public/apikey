@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import requests, json, string, random, hmac, hashlib, base64, datetime, sys
+import requests, json, string, random, hmac, hashlib, base64, datetime, sys, urllib
 import pprint
 
 '''
@@ -37,7 +37,7 @@ class Onshape():
             self.creds = logins[stackName]
         else:
             raise ValueError('No credentials found for requested stack', stackName)
-            
+
     def setLogging(self, opt):
         self.logging = opt
 
@@ -49,7 +49,7 @@ class Onshape():
         auth_key = str(self.creds['accessKey'])
         auth_skey = str(self.creds['secretKey']).encode('utf-8')
         on_nonce = ''.join(random.choice(string.ascii_uppercase + string.digits) for i in range(25))
-        query_string = '&'.join([ '='.join(x) for x in query])
+        query_string = urllib.urlencode(query)
         hmac_string = (method + '\n' + on_nonce + '\n' + auth_date + '\napplication/json\n' + path + '\n' +query_string + '\n').lower().encode('utf-8')
         signature = base64.b64encode(hmac.new(auth_skey, hmac_string, digestmod=hashlib.sha256).digest())
         asign = 'On ' + auth_key + ':HmacSHA256:' + signature.decode('utf-8')
@@ -81,17 +81,17 @@ class Onshape():
 
         return resp
 
-    def get(self, path, query=[], body={}, headers=[], raise_on_fail=None):
+    def get(self, path, query={}, body={}, headers=[], raise_on_fail=True):
         onshapeHeaders = self.__buildHeaders('get', path, query, body, headers)
         resp = requests.get(self.creds['baseUrl'] + path, params=query, headers=onshapeHeaders, allow_redirects=False)
         return self.__logAndReturn(resp, raise_on_fail)
 
-    def delete(self, path, query=[], body={}, headers=[], raise_on_fail=True):
+    def delete(self, path, query={}, body={}, headers=[], raise_on_fail=True):
         onshapeHeaders = self.__buildHeaders('delete', path, query, body, headers)
         resp = requests.delete(self.creds['baseUrl'] + path, params=query, headers=onshapeHeaders, allow_redirects=False)
         return self.__logAndReturn(resp, raise_on_fail)
 
-    def post(self, path, query=[], body={}, headers=[], raise_on_fail=True):
+    def post(self, path, query={}, body={}, headers=[], raise_on_fail=True):
         onshapeHeaders = self.__buildHeaders('post', path, query, body, headers)
         resp = requests.post(self.creds['baseUrl'] + path, params=query, data=json.dumps(body), headers=onshapeHeaders, allow_redirects=False)
         return self.__logAndReturn(resp, raise_on_fail)
