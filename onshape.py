@@ -74,7 +74,7 @@ class Onshape():
         if (raise_on_fail == None):
             raise_on_fail = self.raise_on_fail
 
-        if (raise_on_fail and resp.status_code != 200 and resp.status_code != 204):
+        if (raise_on_fail and (resp.status_code < 200 or resp.status_code > 206)):
             result = resp.json()
             message = 'Unexpected status ' + str(resp.status_code) + ' (' + result['message'] + ')'
             raise ValueError(message, resp.status_code)
