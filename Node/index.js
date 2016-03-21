@@ -1,3 +1,6 @@
+var util = require('./lib/util.js');
+var errors = require('./config/errors.js');
+
 var minimist = require('minimist');
 var app = null;
 
@@ -5,7 +8,7 @@ var argv = minimist(process.argv.slice(2));
 if (argv['u'] || argv['usage'] || argv['h'] || argv['help']) {
   console.log('\nThis app will tally the total weight of each material in a given part studio.\n');
   console.log('\tUsage: node . -d <documentId> -[wvm] <wvmId> -e <elementId>');
-  console.log('\n(wvmId should be a workspaceId (-w), versionId (-v), or microversionId (-m), depending on the given value of [wvm]\n');
+  console.log('\n(wvmId should be a workspaceId (-w), versionId (-v), or microversionId (-m), depending on the given value of [wvm])\n');
   process.exit(0);
 }
 var versionContext = 0;
@@ -23,12 +26,10 @@ if (argv['m']) {
   wvm = 'm';
 }
 if (versionContext !== 1) {
-  console.log('You must specify exactly one of -w (workspaceId), -v (versionId), or -m (microversionId).');
-  process.exit(1);
+  util.error(errors.versionContextError);
 }
 if (!argv['d'] || !argv['e']) {
-  console.log('You must specify a -d (documentId) and -e (elementId).');
-  process.exit(1);
+  util.error(errors.missingDocumentOrElementError);
 }
 
 app = require('./lib/app.js');

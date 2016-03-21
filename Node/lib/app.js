@@ -1,10 +1,14 @@
+var util = require('./util.js');
+var errors = require('../config/errors.js');
+
 var apikey = null;
 try {
   apikey = require('../config/apikey.js');
 } catch (e) {
-  console.log('You must provide an API key file named config/apikey.js; please see config/apikeyexample.js for an example.');
-  process.exit(2);
+  util.error(errors.credentialsFileError);
 }
+
+var onshape = require('./onshape.js')(apikey);
 
 module.exports = function (documentId, wvm, wvmId, elementId) {
   console.log('Document ID: ' + documentId);
