@@ -18,5 +18,13 @@ module.exports = {
   'badBaseUrlError': {
     'msg': 'baseUrl field in config/apikey.js is invalid (must begin with http:// or https://).',
     'status': 2
-  } 
+  },
+  'getError': {
+    'msg': 'GET request failed.',
+    'status': 3
+  },
+  'notOKError': {
+    'msg': 'API call failed.',
+    'status': 3
+  }
 }

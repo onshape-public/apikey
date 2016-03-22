@@ -3,7 +3,6 @@
 
 module.exports = {
   'baseUrl': 'https://partner.dev.onshape.com',
-  'userId': USER_ID,
   'accessKey': ACCESS_KEY,
   'secretKey': SECRET_KEY
 };
