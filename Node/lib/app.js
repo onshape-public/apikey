@@ -27,6 +27,28 @@ var getMassProperties = function (documentId, wvm, wvmId, elementId, cb) {
   onshape.get(opts, cb);
 }
 
+var createPartStudio = function (documentId, workspaceId, name, cb) {
+  var opts = {
+    d: documentId,
+    w: workspaceId,
+    resource: 'partstudios',
+    body: {
+      name: name
+    }
+  }
+  onshape.post(opts, cb);
+}
+
+var deleteElement = function (documentId, workspaceId, elementId, cb) {
+  var opts = {
+    d: documentId,
+    w: workspaceId,
+    e: elementId,
+    resource: 'elements',
+  }
+  onshape.delete(opts, cb);
+}
+
 var massByMaterial = function (documentId, wvm, wvmId, elementId) {
   var partsByMaterial = {};
   var massesByMaterial = {};
@@ -69,6 +91,27 @@ var massByMaterial = function (documentId, wvm, wvmId, elementId) {
   getPartsStep();
 };
 
+var expensiveDoNothing = function (documentId, workspaceId) {
+  partStudioId = null;
+
+  var createPartStudioStep = function () {
+    createPartStudio(documentId, workspaceId, 'DELETE THIS PART STUDIO!', function (data) {
+      partStudioId = JSON.parse(data.toString()).id;
+      console.log('Created a part studio with id ' + partStudioId);
+      deleteElementStep();
+    });
+  };
+
+  var deleteElementStep = function () {
+    deleteElement(documentId, workspaceId, partStudioId, function (data) {
+      console.log('Deleted that part studio with id ' + partStudioId + '.  Nothing has actually been accomplished.');
+    });
+  };
+
+  createPartStudioStep();
+}
+
 module.exports = {
-  massByMaterial: massByMaterial
+  massByMaterial: massByMaterial,
+  expensiveDoNothing: expensiveDoNothing
 }

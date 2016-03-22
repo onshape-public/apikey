@@ -7,6 +7,10 @@ module.exports = {
     'msg': 'You must specify a -d (documentId) and -e (elementId).',
     'status': 1
   },
+  'missingDocumentOrWorkspaceError': {
+    'msg': 'You must specify a -d (documentId) and -w (workspaceId).',
+    'status': 1
+  },
   'credentialsFileError': {
     'msg': 'You must provide an API key file named config/apikey.js; please see config/apikeyexample.js for an example.',
     'status': 2

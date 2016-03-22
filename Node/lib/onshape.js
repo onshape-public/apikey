@@ -76,7 +76,9 @@ module.exports = (function (creds) {
     } else if ('m' in opts) {
       path += '/m/' + opts.m;
     }
-    path += '/e/' + opts.e;
+    if ('e' in opts) {
+      path += '/e/' + opts.e;
+    }
     if ('subresource' in opts) {
       path += '/' + opts.subresource;
     }
@@ -131,7 +133,7 @@ module.exports = (function (creds) {
       util.error(errors.getError);
     });
     req.end();
-  }
+  };
 
   /*
    * opts: {
@@ -158,9 +160,23 @@ module.exports = (function (creds) {
     requestOpts.method = 'POST';
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
+      var dataFired = false;
       res.on('data', function (data) {
         if (res.statusCode === 200) {
+          dataFired = true;
           cb(data);
+        } else {
+          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
+          console.log(data.toString());
+          util.error(errors.notOKError);
+        }
+      });
+      res.on('end', function () { // if there's no data
+        if (dataFired) {
+          return;
+        }
+        if (res.statusCode === 200) {
+          cb();
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path);
           console.log(data.toString());
@@ -170,12 +186,64 @@ module.exports = (function (creds) {
     }).on('error', function (e) {
       util.error(errors.getError);
     });
-    req.write(opts.body);
+    req.write(JSON.stringify(opts.body));
     req.end();
-  }
+  };
+
+  /*
+   * opts: {
+   *   d: document ID
+   *   w: workspace ID
+   *   e: elementId
+   *   resource: top-level resource (partstudios)
+   *   subresource: sub-resource, if any (massproperties)
+   *   path: from /api/...; if present, overrides the other options
+   * }
+   */
+  var del = function (opts, cb) {
+    var path = '';
+    if ('path' in opts) {
+      path = opts.path;
+    } else {
+      path = buildDWMVEPath(opts);
+    }
+    var headers = buildHeaders('DELETE', path, '', {});
+    var requestOpts = url.parse(creds.baseUrl + path);
+    requestOpts.method = 'DELETE';
+    requestOpts.headers = headers;
+    var req = protocol.request(requestOpts, function (res) {
+      var dataFired = false;
+      res.on('data', function (data) {
+        if (res.statusCode === 200) {
+          dataFired = true;
+          cb(data);
+        } else {
+          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
+          console.log(data.toString());
+          util.error(errors.notOKError);
+        }
+      });
+      res.on('end', function () { // if there's no data
+        if (dataFired) {
+          return;
+        }
+        if (res.statusCode === 200) {
+          cb();
+        } else {
+          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
+          console.log(data.toString());
+          util.error(errors.notOKError);
+        }
+      });
+    }).on('error', function (e) {
+      util.error(errors.getError);
+    });
+    req.end();
+  };
 
   return {
     get: get,
-    post: post
+    post: post,
+    delete: del
   };
 })(apikey);
