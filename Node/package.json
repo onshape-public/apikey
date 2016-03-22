@@ -6,7 +6,6 @@
   "author": {
     "name": "Onshape Partner-API Team"
   },
-  "main": "index.js",
   "dependencies": {
     "minimist": "1.2.0"
   }

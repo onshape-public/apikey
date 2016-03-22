@@ -27,9 +27,9 @@ var getMassProperties = function (documentId, wvm, wvmId, elementId, cb) {
   onshape.get(opts, cb);
 }
 
-module.exports = function (documentId, wvm, wvmId, elementId) {
+var massByMaterial = function (documentId, wvm, wvmId, elementId) {
   var partsByMaterial = {};
-  var massByMaterial = {};
+  var massesByMaterial = {};
 
   var getPartsStep = function () {
     getParts(documentId, wvm, wvmId, elementId, function (data) {
@@ -50,17 +50,25 @@ module.exports = function (documentId, wvm, wvmId, elementId) {
   var getMassPropertiesStep = function () {
     getMassProperties(documentId, wvm, wvmId, elementId, function (data) {
       var massList = JSON.parse(data.toString());
+      var totalMass = 0;
       for (var material in partsByMaterial) {
-        massByMaterial[material] = 0;
+        massesByMaterial[material] = 0;
         for (var i = 0; i < partsByMaterial[material].length; i++) {
           if (massList.bodies[partsByMaterial[material][i]]['hasMass']) {
-            massByMaterial[material] += massList.bodies[partsByMaterial[material][i]]['mass'][0];
+            massesByMaterial[material] += massList.bodies[partsByMaterial[material][i]]['mass'][0];
+            totalMass += massList.bodies[partsByMaterial[material][i]]['mass'][0];
           }
         }
-        console.log(material + ': ' + massByMaterial[material]);
+        console.log(material + ': ' + massesByMaterial[material]);
       }
+      console.log('—-———-—-–—-–—––--——-–—-–––-–––');
+      console.log('Total mass: ' + totalMass);
     });
   };
 
   getPartsStep();
 };
+
+module.exports = {
+  massByMaterial: massByMaterial
+}

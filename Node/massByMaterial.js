@@ -7,7 +7,7 @@ var app = null;
 var argv = minimist(process.argv.slice(2));
 if (argv['u'] || argv['usage'] || argv['h'] || argv['help']) {
   console.log('\nThis app will tally the total weight of each material in a given part studio.\n');
-  console.log('\tUsage: node . -d <documentId> -[wvm] <wvmId> -e <elementId>');
+  console.log('\tUsage: node massByMaterial.js -d <documentId> -[wvm] <wvmId> -e <elementId>');
   console.log('\n(wvmId should be a workspaceId (-w), versionId (-v), or microversionId (-m), depending on the given value of [wvm])\n');
   process.exit(0);
 }
@@ -33,4 +33,4 @@ if (!argv['d'] || !argv['e']) {
 }
 
 app = require('./lib/app.js');
-app(argv['d'], wvm, argv[wvm], argv['e']);
+app.massByMaterial(argv['d'], wvm, argv[wvm], argv['e']);

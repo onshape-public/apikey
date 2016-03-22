@@ -122,6 +122,7 @@ module.exports = (function (creds) {
         if (res.statusCode === 200) {
           cb(data);
         } else {
+          console.log(requestOpts.method + ' ' + creds.baseUrl + path + queryString);
           console.log(data.toString());
           util.error(errors.notOKError);
         }
@@ -132,7 +133,49 @@ module.exports = (function (creds) {
     req.end();
   }
 
+  /*
+   * opts: {
+   *   d: document ID
+   *   w: workspace ID (only one of w, v, m)
+   *   v: version ID (only one of w, v, m)
+   *   m: microversion ID (only one of w, v, m)
+   *   e: elementId
+   *   resource: top-level resource (partstudios)
+   *   subresource: sub-resource, if any (massproperties)
+   *   path: from /api/...; if present, overrides the other options
+   *   body: POST body
+   * }
+   */
+  var post = function (opts, cb) {
+    var path = '';
+    if ('path' in opts) {
+      path = opts.path;
+    } else {
+      path = buildDWMVEPath(opts);
+    }
+    var headers = buildHeaders('POST', path, '', {});
+    var requestOpts = url.parse(creds.baseUrl + path);
+    requestOpts.method = 'POST';
+    requestOpts.headers = headers;
+    var req = protocol.request(requestOpts, function (res) {
+      res.on('data', function (data) {
+        if (res.statusCode === 200) {
+          cb(data);
+        } else {
+          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
+          console.log(data.toString());
+          util.error(errors.notOKError);
+        }
+      });
+    }).on('error', function (e) {
+      util.error(errors.getError);
+    });
+    req.write(opts.body);
+    req.end();
+  }
+
   return {
-    get: get
+    get: get,
+    post: post
   };
 })(apikey);
