@@ -31,10 +31,10 @@ var createPartStudio = function (documentId, workspaceId, name, cb) {
   var opts = {
     d: documentId,
     w: workspaceId,
-    resource: 'partstudios',
-    body: {
-      name: name
-    }
+    resource: 'partstudios'
+  }
+  if (typeof name === 'string') {
+    opts.body = {name: name};
   }
   onshape.post(opts, cb);
 }
@@ -47,6 +47,17 @@ var deleteElement = function (documentId, workspaceId, elementId, cb) {
     resource: 'elements',
   }
   onshape.delete(opts, cb);
+}
+
+var uploadBlobElement = function (documentId, workspaceId, file, mimeType, cb) {
+  var opts = {
+    d: documentId,
+    w: workspaceId,
+    resource: 'blobelements',
+    file: file,
+    mimeType: mimeType
+  }
+  onshape.upload(opts, cb);
 }
 
 var massByMaterial = function (documentId, wvm, wvmId, elementId) {
@@ -95,9 +106,10 @@ var expensiveDoNothing = function (documentId, workspaceId) {
   partStudioId = null;
 
   var createPartStudioStep = function () {
-    createPartStudio(documentId, workspaceId, 'DELETE THIS PART STUDIO!', function (data) {
+    var name = 'DELETE THIS PART STUDIO!';
+    createPartStudio(documentId, workspaceId, name, function (data) {
       partStudioId = JSON.parse(data.toString()).id;
-      console.log('Created a part studio with id ' + partStudioId);
+      console.log('Created a part studio with id ' + partStudioId + '.');
       deleteElementStep();
     });
   };
@@ -111,7 +123,15 @@ var expensiveDoNothing = function (documentId, workspaceId) {
   createPartStudioStep();
 }
 
+var uploadBlob = function (documentId, workspaceId, file, mimeType) {
+  uploadBlobElement(documentId, workspaceId, file, mimeType, function (data) {
+    var blobData = JSON.parse(data.toString());
+    console.log('Uploaded file to new element with id ' + blobData.id + ' and name ' + blobData.name + '.');
+  });
+}
+
 module.exports = {
   massByMaterial: massByMaterial,
-  expensiveDoNothing: expensiveDoNothing
+  expensiveDoNothing: expensiveDoNothing,
+  uploadBlob: uploadBlob
 }

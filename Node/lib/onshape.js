@@ -3,6 +3,8 @@ var errors = require('../config/errors.js');
 var crypto = require('crypto');
 var url = require('url');
 var querystring = require('querystring');
+var fs = require('fs');
+var pathModule = require('path');
 
 var apikey = null;
 try {
@@ -64,6 +66,10 @@ module.exports = (function (creds) {
     headers['Date'] = authDate;
     headers['Authorization'] = asign;
 
+    if (!('Accept' in headers)) {
+      headers['Accept'] = 'application/vnd.onshape.v1+json';
+    }
+
     return headers;
   }
 
@@ -103,6 +109,7 @@ module.exports = (function (creds) {
    *   resource: top-level resource (partstudios)
    *   subresource: sub-resource, if any (massproperties)
    *   path: from /api/...; if present, overrides the other options
+   *   accept: accept header (default: application/vnd.onshape.v1+json)
    *   query: query object
    * }
    */
@@ -120,16 +127,31 @@ module.exports = (function (creds) {
     requestOpts.method = 'GET';
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
-      res.on('data', function (data) {
+      var dataFired = false;
+      var handle = function (data) {
         if (res.statusCode === 200) {
+          dataFired = true;
           cb(data);
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path + queryString);
-          console.log(data.toString());
+          console.log('Status: ' + res.statusCode);
+          if (data) {
+            console.log(data.toString());
+          }
           util.error(errors.notOKError);
         }
+      };
+      res.on('data', function (data) {
+        handle(data);
+      });
+      res.on('end', function () {
+        if (dataFired) {
+          return;
+        }
+        handle(null);
       });
     }).on('error', function (e) {
+      console.log(e);
       util.error(errors.getError);
     });
     req.end();
@@ -145,6 +167,7 @@ module.exports = (function (creds) {
    *   resource: top-level resource (partstudios)
    *   subresource: sub-resource, if any (massproperties)
    *   path: from /api/...; if present, overrides the other options
+   *   accept: accept header (default: application/vnd.onshape.v1+json)
    *   body: POST body
    * }
    */
@@ -161,32 +184,38 @@ module.exports = (function (creds) {
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
       var dataFired = false;
-      res.on('data', function (data) {
+      var handle = function (data) {
         if (res.statusCode === 200) {
           dataFired = true;
           cb(data);
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path);
-          console.log(data.toString());
+          console.log(req.body);
+          console.log('Status: ' + res.statusCode);
+          if (data) {
+            console.log(data.toString());
+          }
           util.error(errors.notOKError);
         }
+      };
+      res.on('data', function (data) {
+        handle(data);
       });
       res.on('end', function () { // if there's no data
         if (dataFired) {
           return;
         }
-        if (res.statusCode === 200) {
-          cb();
-        } else {
-          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
-          console.log(data.toString());
-          util.error(errors.notOKError);
-        }
+        handle(null);
       });
     }).on('error', function (e) {
-      util.error(errors.getError);
+      console.log(e);
+      util.error(errors.postError);
     });
-    req.write(JSON.stringify(opts.body));
+    if ('body' in opts) {
+      req.write(JSON.stringify(opts.body));
+    } else {
+      req.write('{}');
+    }
     req.end();
   };
 
@@ -198,9 +227,10 @@ module.exports = (function (creds) {
    *   resource: top-level resource (partstudios)
    *   subresource: sub-resource, if any (massproperties)
    *   path: from /api/...; if present, overrides the other options
+   *   accept: accept header (default: application/vnd.onshape.v1+json)
    * }
    */
-  var del = function (opts, cb) {
+  var del = function (opts, cb) { // 'delete' is a reserved keyword, so it can't be a variable name
     var path = '';
     if ('path' in opts) {
       path = opts.path;
@@ -213,37 +243,123 @@ module.exports = (function (creds) {
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
       var dataFired = false;
-      res.on('data', function (data) {
+      var handle = function (data) {
         if (res.statusCode === 200) {
           dataFired = true;
           cb(data);
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path);
-          console.log(data.toString());
+          console.log('Status: ' + res.statusCode);
+          if (data) {
+            console.log(data.toString());
+          }
           util.error(errors.notOKError);
         }
+      };
+      res.on('data', function (data) {
+        handle(data);
       });
       res.on('end', function () { // if there's no data
         if (dataFired) {
           return;
         }
-        if (res.statusCode === 200) {
-          cb();
-        } else {
-          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
-          console.log(data.toString());
-          util.error(errors.notOKError);
-        }
+        handle(null);
       });
     }).on('error', function (e) {
-      util.error(errors.getError);
+      console.log(e);
+      util.error(errors.deleteError);
     });
     req.end();
+  };
+
+  /*
+   * opts: {
+   *   d: document ID
+   *   w: workspace ID (only one of w, v, m)
+   *   v: version ID (only one of w, v, m)
+   *   m: microversion ID (only one of w, v, m)
+   *   e: elementId
+   *   resource: top-level resource (partstudios)
+   *   subresource: sub-resource, if any (massproperties)
+   *   path: from /api/...; if present, overrides the other options
+   *   accept: accept header (default: application/vnd.onshape.v1+json)
+   *   file: local path of file to upload
+   *   mimeType: MIME type of file
+   *   body: other form data; should be plain key/value pairs
+   * }
+   */
+  var upload = function (opts, cb) {
+    var path = '';
+    if ('path' in opts) {
+      path = opts.path;
+    } else {
+      path = buildDWMVEPath(opts);
+    }
+
+    // set up headers
+    var boundaryKey = Math.random().toString(16); // random string for boundary
+    var headers = buildHeaders('POST', path, '', {'Content-Type': 'multipart/form-data; boundary="' + boundaryKey + '"'});
+    var requestOpts = url.parse(creds.baseUrl + path);
+    requestOpts.method = 'POST';
+    requestOpts.headers = headers;
+
+    // set up request
+    var req = protocol.request(requestOpts, function (res) {
+      var dataFired = false;
+      var handle = function (data) {
+        if (res.statusCode === 200) {
+          dataFired = true;
+          cb(data);
+        } else {
+          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
+          console.log('Status: ' + res.statusCode);
+          if (data) {
+            console.log(data.toString());
+          }
+          util.error(errors.notOKError);
+        }
+      }
+      res.on('data', function (data) {
+        handle(data);
+      });
+      res.on('end', function () { // if there's no data
+        if (dataFired) {
+          return;
+        }
+        handle(null);
+      });
+    }).on('error', function (e) {
+      console.log(e);
+      util.error(errors.postError);
+    });
+
+    // set up file info
+    if (!('body' in opts)) {
+      opts.body = {};
+    }
+    var filename = pathModule.basename(opts.file);
+    opts.body.encodedFilename = filename;
+    opts.body.fileContentLength = fs.statSync(opts.file).size;
+
+    // set up form data
+    for (var key in opts.body) {
+      req.write('--' + boundaryKey + '\r\nContent-Disposition: form-data; name="' + key + '"\r\n\r\n');
+      req.write('' + opts.body[key]);
+      req.write('\r\n');
+    }
+
+    // add file and end request
+    req.write('--' + boundaryKey + '\r\nContent-Disposition: form-data; name="file"; filename="' + filename + '"\r\n');
+    req.write('Content-Type: ' + opts.mimeType + '\r\n\r\n');
+    fs.createReadStream(opts.file).on('end', function () {
+      req.end('--' + boundaryKey + '--');
+    }).pipe(req, {end: false});
   };
 
   return {
     get: get,
     post: post,
-    delete: del
+    delete: del,
+    upload: upload
   };
 })(apikey);

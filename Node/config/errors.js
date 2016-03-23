@@ -11,6 +11,14 @@ module.exports = {
     'msg': 'You must specify a -d (documentId) and -w (workspaceId).',
     'status': 1
   },
+  'missingMimeType': {
+    'msg': 'You must specify a -t (MIME type)',
+    'status': 1
+  },
+  'missingFile': {
+    'msg': 'Yom must specify a -f (file)',
+    'status': 1
+  },
   'credentialsFileError': {
     'msg': 'You must provide an API key file named config/apikey.js; please see config/apikeyexample.js for an example.',
     'status': 2
@@ -25,6 +33,14 @@ module.exports = {
   },
   'getError': {
     'msg': 'GET request failed.',
+    'status': 3
+  },
+  'postError': {
+    'msg': 'POST request failed.',
+    'status': 3
+  },
+  'deleteError': {
+    'msg': 'DELETE request failed.',
     'status': 3
   },
   'notOKError': {
