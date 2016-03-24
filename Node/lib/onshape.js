@@ -23,7 +23,7 @@ var buildNonce = function () {
   ];
   var nonce = '';
   for (var i = 0; i < 25; i++) {
-    nonce += chars[Math.ceil(Math.random()*chars.length)];
+    nonce += chars[Math.floor(Math.random()*chars.length)];
   }
   return nonce;
 }
@@ -351,9 +351,14 @@ module.exports = (function (creds) {
     // add file and end request
     req.write('--' + boundaryKey + '\r\nContent-Disposition: form-data; name="file"; filename="' + filename + '"\r\n');
     req.write('Content-Type: ' + opts.mimeType + '\r\n\r\n');
-    fs.createReadStream(opts.file).on('end', function () {
-      req.end('--' + boundaryKey + '--');
-    }).pipe(req, {end: false});
+    var readStream = fs.createReadStream(opts.file);
+    readStream.on('data', function (data) {
+      req.write(data);
+    });
+    readStream.on('end', function () {
+      req.write('\r\n--' + boundaryKey + '--');
+      req.end();
+    });
   };
 
   return {
