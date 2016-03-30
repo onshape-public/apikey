@@ -1,0 +1,12 @@
+{
+  "name": "@onshape/apikey-sample",
+  "version": "0.0.0",
+  "description": "Sample application using API keys",
+  "private": true,
+  "author": {
+    "name": "Onshape Partner-API Team"
+  },
+  "dependencies": {
+    "minimist": "1.2.0"
+  }
+}
