@@ -36,60 +36,23 @@ application:
 ##### Instructions
 
 1. Get the Developer role for your Onshape account by contacting us at
-[api-support@onshape.com](mailto:api-support@onshape.com). From the Developer Portal,
-you can create and manage your API keys; optionally, you can use HTTP requests by
-following the process below:
+[api-support@onshape.com](mailto:api-support@onshape.com).
 
-2. Create a key pair by sending a `POST` request to `/api/users/apikeys`; you
-can optionally specify a `scopeNames` array as part of the JSON body. See
-[below](#scopes) for information on what scopes are available. If you omit the
-`scopeNames` array, your key will be generated with all scopes you have access to.
+2. Create and manage your API key pairs from the [Developer Portal](https://dev-portal.dev.onshape.com);
+note that the secret will only be displayed once! Keep it somewhere safe.
 
-3. The server will send back a JSON object with the structure:
-```json
-{
-    "state": 0,
-    "scopeNames": [
-        "scope1",
-        "scope2",
-        "etc..."
-    ],
-    "accessKey": "<accessKey>",
-    "userId": "<userId>",
-    "secretKey": "<secretKey>",
-    "name": null,
-    "id": "<accessKey>",
-    "href": "https://<server>/api/users/apikeys/<accessKey>"
-}
-```
-The two most important pieces of the response are of course the `accessKey` and
-`secretKey`; keep them stored safely!
-
-4. Now that you have a key pair, see [below](#generating-a-request-signature) for
+3. Now that you have a key pair, see [below](#generating-a-request-signature) for
 information on signing your requests to use our API.
 
 ##### Scopes
 
-There are several scopes available for API keys (equivalent to existing OAuth scopes),
-which can be passed in as a part of your `POST` request to `/api/users/apikeys`
-via the JSON body, in the `scopeNames` array:
+There are several scopes available for API keys (equivalent to OAuth scopes):
 
 * "OAuth2Read" - Read non-personal information (documents, parts, etc.)
 * "OAuth2ReadPII" - Read personal information (name, email, etc.)
 * "OAuth2Write" - Create and edit documents / etc.
 * "OAuth2Delete" - Delete documents / etc.
 * "OAuth2Purchase" - Authorize purchases from account
-
-##### Endpoints
-
-Below are the relevant endpoints for working with API keys:
-
-* `POST /api/users/apikeys`: Create a new API key pair
-* `GET /api/users/apikeys`: Get all API key pairs for current user
-* `GET /api/users/apikeys/:id`: Get a specific API key pair by ID
-* `POST /api/users/apikeys/:id`: Toggle key pair state between active (0) and inactive (1)
-    * Body should be of form: `{ "accessKey": "key", "state": 0 or 1 }`
-* `DELETE /api/users/apikeys/:id`: Delete a key pair
 
 ##### Generating A Request Signature
 
