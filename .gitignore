@@ -10,6 +10,7 @@ npm-debug.log
 node_modules
 
 # python
+*.pyc
 *.egg
 *.egg-info
 .eggs
@@ -17,4 +18,4 @@ env
 
 # api keys
 node/config/apikey.js
-python/.env
+python/creds.json

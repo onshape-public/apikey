@@ -28,7 +28,20 @@ To exit the virtual environment at any time, simply type `deactivate`.
 
 ### Running the App
 
-Once you're in the virtual environment and have all packages installed
+To run the app, simply do the following:
+
+```bash
+$ ONSHAPE_ACCESS_KEY="ACCESS KEY" ONSHAPE_SECRET_KEY="SECRET KEY" python app.py
+```
+
+Of course, replace "ACCESS KEY" and "SECRET KEY" with the values you got from the
+developer portal.
+
+The demo does a few basic things, to demonstrate GET, POST, and DELETE calls:
+
+1. Creates a new document
+2. Gets your list of documents
+3. Deletes the new document
 
 ### Working w/ API Keys
 
