@@ -21,29 +21,38 @@ import sys
 
 class Onshape():
     '''
-    Provides access to the Onshape REST API. Reads credentials from a JSON file
-    of this format:
-
-        {
-            "http://localhost:8080": {
-                "access_key": "YOUR KEY HERE",
-                "secret_key": "YOUR KEY HERE"
-            },
-            "https://partner.dev.onshape.com": {
-                "access_key": "YOUR KEY HERE",
-                "secret_key": "YOUR KEY HERE"
-            },
-            etc... add new object for each stack to test on
-        }
-
-    The creds.json file should be stored in the root project folder; optionally,
-    you can specify the location of a different file.
+    Provides access to the Onshape REST API.
 
     Attributes:
-        - stack (str, default='https://partner.dev.onshape.com'): Base URL
+        - stack (str): Base URL
         - creds (str, default='../creds.json'): Credentials location
     '''
-    def __init__(self, stack='https://partner.dev.onshape.com', creds='./creds.json'):
+
+    def __init__(self, stack, creds='./creds.json'):
+        '''
+        Instantiates an instance of the Onshape class. Reads credentials from a JSON file
+        of this format:
+
+            {
+                "http://localhost:8080": {
+                    "access_key": "YOUR KEY HERE",
+                    "secret_key": "YOUR KEY HERE"
+                },
+                "https://partner.dev.onshape.com": {
+                    "access_key": "YOUR KEY HERE",
+                    "secret_key": "YOUR KEY HERE"
+                },
+                etc... add new object for each stack to test on
+            }
+
+        The creds.json file should be stored in the root project folder; optionally,
+        you can specify the location of a different file.
+
+        Args:
+            - stack (str, default='https://partner.dev.onshape.com'): Base URL
+            - creds (str, default='../creds.json'): Credentials location
+        '''
+
         if not isfile(creds):
             sys.exit('fatal: %s is not a file' % creds)
 
@@ -52,37 +61,43 @@ class Onshape():
                 stacks = json.load(f)
                 if stack in stacks:
                     self._url = stack
-                    self._access_key = str(stacks[stack]['access_key'])
-                    self._secret_key = str(stacks[stack]['secret_key']).encode('utf-8')
+                    self._access_key = stacks[stack]['access_key'].encode('utf-8')
+                    self._secret_key = stacks[stack]['secret_key'].encode('utf-8')
                 else:
-                    sys.exit('fatal: %s not in file' % stack)
+                    sys.exit('fatal: specified stack not in file')
             except TypeError:
                 sys.exit('fatal: %s is not valid json' % creds)
 
-    '''
-    Generate a unique ID for the request, 25 chars in length
+        utils.log('onshape instance created: url = %s, access key = %s' % (self._url, self._access_key))
 
-    Returns:
-        - str: Cryptographic nonce
-    '''
     def _make_nonce(self):
+        '''
+        Generate a unique ID for the request, 25 chars in length
+
+        Returns:
+            - str: Cryptographic nonce
+        '''
+
         chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
         nonce = ''.join(random.choice(chars) for i in range(25))
 
+        utils.log('nonce created: %s' % nonce)
+
         return nonce
 
-    '''
-    Create the request signature to authenticate
-
-    Args:
-        - method (str): HTTP method
-        - date (str): HTTP date header string
-        - nonce (str): Cryptographic nonce
-        - path (str): URL pathname
-        - query (dict, default={}): URL query string in key-value pairs
-        - ctype (str, default='application/json'): HTTP Content-Type
-    '''
     def _make_auth(self, method, date, nonce, path, query={}, ctype='application/json'):
+        '''
+        Create the request signature to authenticate
+
+        Args:
+            - method (str): HTTP method
+            - date (str): HTTP date header string
+            - nonce (str): Cryptographic nonce
+            - path (str): URL pathname
+            - query (dict, default={}): URL query string in key-value pairs
+            - ctype (str, default='application/json'): HTTP Content-Type
+        '''
+
         query = urllib.urlencode(query)
 
         hmac_str = (method + '\n' + nonce + '\n' + date + '\n' + ctype + '\n' + path +
@@ -91,21 +106,29 @@ class Onshape():
         signature = base64.b64encode(hmac.new(self._secret_key, hmac_str, digestmod=hashlib.sha256).digest())
         auth = 'On ' + self._access_key + ':HmacSHA256:' + signature.decode('utf-8')
 
+        utils.log({
+            'query': query,
+            'hmac_str': hmac_str,
+            'signature': signature,
+            'auth': auth
+        })
+
         return auth
 
-    '''
-    Creates a headers object to sign the request
-
-    Args:
-        - method (str): HTTP method
-        - path (str): Request path, e.g. /api/documents. No query string
-        - query (dict, default={}): Query string in key-value format
-        - headers (dict, default={}): Other headers to pass in
-
-    Returns:
-        - dict: Dictionary containing all headers
-    '''
     def _make_headers(self, method, path, query={}, headers={}):
+        '''
+        Creates a headers object to sign the request
+
+        Args:
+            - method (str): HTTP method
+            - path (str): Request path, e.g. /api/documents. No query string
+            - query (dict, default={}): Query string in key-value format
+            - headers (dict, default={}): Other headers to pass in
+
+        Returns:
+            - dict: Dictionary containing all headers
+        '''
+
         date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
         nonce = self._make_nonce()
         auth = self._make_auth(method, date, nonce, path, query=query)
@@ -124,26 +147,36 @@ class Onshape():
 
         return req_headers
 
-    '''
-    Issues a request to Onshape
+    def request(self, method, path, query={}, headers={}, body={}, raise_on_err=False):
+        '''
+        Issues a request to Onshape
 
-    Args:
-        - method (str): HTTP method
-        - path (str): Path  e.g. /api/documents/:id
-        - query (dict, default={}): Query params in key-value pairs
-        - headers (dict, default={}): Key-value pairs of headers
-        - body (dict, default={}): Body for POST request
+        Args:
+            - method (str): HTTP method
+            - path (str): Path  e.g. /api/documents/:id
+            - query (dict, default={}): Query params in key-value pairs
+            - headers (dict, default={}): Key-value pairs of headers
+            - body (dict, default={}): Body for POST request
+            - raise_on_err (bool, default=False): Whether or not to quit on error
 
-    Returns:
-        - dict: Object containing the response from Onshape
-    '''
-    def request(self, method, path, query={}, headers={}, body={}):
+        Returns:
+            - requests.Response: Object containing the response from Onshape
+        '''
+
         req_headers = self._make_headers(method, path, query, headers)
         url = self._url + path + '?' + urllib.urlencode(query)
 
-        res = requests.request(method, url, headers=req_headers, allow_redirects=False)
-        return res
+        utils.log(body)
+        utils.log(req_headers)
+        utils.log('request url: ' + url)
 
-on = Onshape(stack='http://localhost:8080')
-res = on.request('get', '/api/documents')
-print res.json()
+        body = json.dumps(body)
+
+        res = requests.request(method, url, headers=req_headers, data=body, allow_redirects=False)
+
+        if res.status_code != 200:
+            utils.log('request failed, details: ' + res.text, level=1)
+        else:
+            utils.log('request succeeded, details: ' + res.text)
+
+        return res

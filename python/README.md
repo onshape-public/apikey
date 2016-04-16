@@ -28,16 +28,36 @@ To exit the virtual environment at any time, simply type `deactivate`.
 
 ### Running the App
 
-To run the app, simply do the following:
+Create a `creds.json` file in the root project directory, with the following format:
 
-```bash
-$ ONSHAPE_ACCESS_KEY="ACCESS KEY" ONSHAPE_SECRET_KEY="SECRET KEY" python app.py
+```json
+{
+    "https://partner.dev.onshape.com": {
+        "access_key": "ACCESS KEY",
+        "secret_key": "SECRET KEY"
+    },
+    "https://cad.onshape.com": {
+        "access_key": "ACCESS KEY",
+        "secret_key": "SECRET KEY"
+    }
+}
 ```
 
-Of course, replace "ACCESS KEY" and "SECRET KEY" with the values you got from the
-developer portal.
+Just replace "ACCESS KEY" and "SECRET KEY" with the values you got from the
+developer portal. To test on other stacks, you'll create another object in the file,
+with credentials for that specific stack.
 
-The demo does a few basic things, to demonstrate GET, POST, and DELETE calls:
+To run the application:
+
+```sh
+$ python app.py
+```
+
+If you want to specify a different stack to test on, provide a `STACK={url}`
+environment variable, where `{url}` should be replaced with the base URL you want
+to test against.
+
+The demo does a few basic things to demonstrate GET, POST, and DELETE calls:
 
 1. Creates a new document
 2. Gets your list of documents
