@@ -6,7 +6,6 @@ Convenience functions for working with the Onshape API
 '''
 
 from onshape import Onshape
-import utils
 
 
 class Client():

@@ -18,6 +18,10 @@ import datetime
 import requests
 import sys
 
+__all__ = [
+    'Onshape'
+]
+
 
 class Onshape():
     '''
@@ -34,7 +38,7 @@ class Onshape():
         of this format:
 
             {
-                "http://localhost:8080": {
+                "http://cad.onshape.com": {
                     "access_key": "YOUR KEY HERE",
                     "secret_key": "YOUR KEY HERE"
                 },

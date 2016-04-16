@@ -53,9 +53,12 @@ To run the application:
 $ python app.py
 ```
 
-If you want to specify a different stack to test on, provide a `STACK={url}`
-environment variable, where `{url}` should be replaced with the base URL you want
-to test against.
+If you want to specify a different stack to test on, simply go into `app.py` and
+change the `stack` parameter on this line:
+
+```py
+c = Client(stack='NEW STACK HERE')
+```
 
 The demo does a few basic things to demonstrate GET, POST, and DELETE calls:
 

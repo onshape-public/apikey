@@ -5,11 +5,7 @@ utils
 Handy functions for API key sample app
 '''
 
-import json
-import pprint
 import logging
-from logging.config import dictConfig
-
 
 __all__ = [
     'log'
@@ -68,7 +64,7 @@ def log(msg, level=0):
         }
     }
 
-    dictConfig(cfg)
+    logging.config.dictConfig(cfg)
 
     lg = 'info' if level == 0 else 'error'
     lvl = 20 if level == 0 else 40
