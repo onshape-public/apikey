@@ -10,7 +10,7 @@ from apikey.client import Client
 # stacks to choose from
 stacks = {
     'partner': 'https://partner.dev.onshape.com',
-    'cad': 'https://cad.dev.onshape.com'
+    'cad': 'https://cad.onshape.com'
 }
 
 # create instance of the onshape client; change key to test on another stack
