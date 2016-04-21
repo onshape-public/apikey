@@ -7,6 +7,11 @@ Convenience functions for working with the Onshape API
 
 from onshape import Onshape
 
+import mimetypes
+import random
+import string
+import os
+
 
 class Client():
     '''
@@ -105,3 +110,57 @@ class Client():
         '''
 
         return self._api.request('get', '/api/documents')
+
+    def create_assembly(self, did, wid, name='My Assembly'):
+        '''
+        Creates a new assembly element in the specified document / workspace.
+
+        Args:
+            - did (str): Document ID
+            - wid (str): Workspace ID
+            - name (str, default='My Assembly')
+
+        Returns:
+            - requests.Response: Onshape response data
+        '''
+
+        payload = {
+            'name': name
+        }
+
+        return self._api.request('post', '/api/assemblies/d/' + did + '/w/' + wid, body=payload)
+
+    def upload_blob(self, did, wid, filepath='./blob.json'):
+        '''
+        Uploads a file to a new blob element in the specified doc.
+
+        Args:
+            - did (str): Document ID
+            - wid (str): Workspace ID
+            - filepath (str, default='./blob.json'): Blob element location
+
+        Returns:
+            - requests.Response: Onshape response data
+        '''
+
+        chars = string.ascii_letters + string.digits
+        boundary_key = ''.join(random.choice(chars) for i in range(8))
+
+        mimetype = mimetypes.guess_type(filepath)[0]
+        encoded_filename = os.path.basename(filepath)
+        file_content_length = str(os.path.getsize(filepath))
+        blob = open(filepath)
+
+        req_headers = {
+            'Content-Type': 'multipart/form-data; boundary="%s"' % boundary_key
+        }
+
+        # build request body
+        payload = '--' + boundary_key + '\r\nContent-Disposition: form-data; name="encodedFilename"\r\n\r\n' + encoded_filename + '\r\n'
+        payload += '--' + boundary_key + '\r\nContent-Disposition: form-data; name="fileContentLength"\r\n\r\n' + file_content_length + '\r\n'
+        payload += '--' + boundary_key + '\r\nContent-Disposition: form-data; name="file"; filename="' + encoded_filename + '"\r\n'
+        payload += 'Content-Type: ' + mimetype + '\r\n\r\n'
+        payload += blob.read()
+        payload += '\r\n--' + boundary_key + '--'
+
+        return self._api.request('post', '/api/blobelements/d/' + did + '/w/' + wid, headers=req_headers, body=payload)

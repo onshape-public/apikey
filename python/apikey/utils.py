@@ -6,6 +6,7 @@ Handy functions for API key sample app
 '''
 
 import logging
+from logging.config import dictConfig
 
 __all__ = [
     'log'
@@ -64,7 +65,7 @@ def log(msg, level=0):
         }
     }
 
-    logging.config.dictConfig(cfg)
+    dictConfig(cfg)
 
     lg = 'info' if level == 0 else 'error'
     lvl = 20 if level == 0 else 40

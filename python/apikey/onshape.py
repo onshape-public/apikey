@@ -7,8 +7,9 @@ Provides access to the Onshape REST API
 
 import utils
 
-from os.path import isfile
+import os
 import random
+import string
 import json
 import hmac
 import hashlib
@@ -16,7 +17,6 @@ import base64
 import urllib
 import datetime
 import requests
-import sys
 
 __all__ = [
     'Onshape'
@@ -29,7 +29,7 @@ class Onshape():
 
     Attributes:
         - stack (str): Base URL
-        - creds (str, default='../creds.json'): Credentials location
+        - creds (str, default='./creds.json'): Credentials location
     '''
 
     def __init__(self, stack, creds='./creds.json'):
@@ -53,12 +53,12 @@ class Onshape():
         you can specify the location of a different file.
 
         Args:
-            - stack (str, default='https://partner.dev.onshape.com'): Base URL
-            - creds (str, default='../creds.json'): Credentials location
+            - stack (str): Base URL
+            - creds (str, default='./creds.json'): Credentials location
         '''
 
-        if not isfile(creds):
-            sys.exit('fatal: %s is not a file' % creds)
+        if not os.path.isfile(creds):
+            raise IOError('%s is not a file' % creds)
 
         with open(creds) as f:
             try:
@@ -68,9 +68,9 @@ class Onshape():
                     self._access_key = stacks[stack]['access_key'].encode('utf-8')
                     self._secret_key = stacks[stack]['secret_key'].encode('utf-8')
                 else:
-                    sys.exit('fatal: specified stack not in file')
+                    raise ValueError('specified stack not in file')
             except TypeError:
-                sys.exit('fatal: %s is not valid json' % creds)
+                raise ValueError('%s is not valid json' % creds)
 
         utils.log('onshape instance created: url = %s, access key = %s' % (self._url, self._access_key))
 
@@ -82,7 +82,7 @@ class Onshape():
             - str: Cryptographic nonce
         '''
 
-        chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        chars = string.digits + string.ascii_letters
         nonce = ''.join(random.choice(chars) for i in range(25))
 
         utils.log('nonce created: %s' % nonce)
@@ -135,14 +135,17 @@ class Onshape():
 
         date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
         nonce = self._make_nonce()
-        auth = self._make_auth(method, date, nonce, path, query=query)
+        ctype = headers.get('Content-Type') if headers.get('Content-Type') else 'application/json'
+
+        auth = self._make_auth(method, date, nonce, path, query=query, ctype=ctype)
 
         req_headers = {
             'Content-Type': 'application/json',
             'Date': date,
             'On-Nonce': nonce,
             'Authorization': auth,
-            'User-Agent': 'Onshape Python Sample App'
+            'User-Agent': 'Onshape Python Sample App',
+            'Accept': 'application/vnd.onshape.v1+json'
         }
 
         # add in user-defined headers
@@ -151,7 +154,7 @@ class Onshape():
 
         return req_headers
 
-    def request(self, method, path, query={}, headers={}, body={}, raise_on_err=False):
+    def request(self, method, path, query={}, headers={}, body={}):
         '''
         Issues a request to Onshape
 
@@ -161,7 +164,6 @@ class Onshape():
             - query (dict, default={}): Query params in key-value pairs
             - headers (dict, default={}): Key-value pairs of headers
             - body (dict, default={}): Body for POST request
-            - raise_on_err (bool, default=False): Whether or not to quit on error
 
         Returns:
             - requests.Response: Object containing the response from Onshape
@@ -174,9 +176,10 @@ class Onshape():
         utils.log(req_headers)
         utils.log('request url: ' + url)
 
-        body = json.dumps(body)
+        # only parse as json string if we have to
+        body = json.dumps(body) if type(body) == dict else body
 
-        res = requests.request(method, url, headers=req_headers, data=body, allow_redirects=False)
+        res = requests.request(method, url, headers=req_headers, data=body)
 
         if res.status_code != 200:
             utils.log('request failed, details: ' + res.text, level=1)
