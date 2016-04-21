@@ -130,6 +130,55 @@ class Client():
 
         return self._api.request('post', '/api/assemblies/d/' + did + '/w/' + wid, body=payload)
 
+    def get_features(self, did, wid, eid):
+        '''
+        Gets the feature list for specified document / workspace / part studio.
+
+        Args:
+            - did (str): Document ID
+            - wid (str): Workspace ID
+            - eid (str): Element ID
+
+        Returns:
+            - requests.Response: Onshape response data
+        '''
+
+        return self._api.request('get', '/api/partstudios/d/' + did + '/w/' + wid + '/e/' + eid + '/features')
+
+    def update_rollback(self, did, wid, eid, body):
+        '''
+        Move the rollback bar in the feature list for a part studio (partner stack only)
+
+        Args:
+            - did (str): Document ID
+            - wid (str): Workspace ID
+            - eid (str): Element ID
+            - body (dict): POST body
+
+        Returns:
+            - requests.Response: Onshape response data
+        '''
+
+        if self._stack != 'https://partner.dev.onshape.com':
+            raise ValueError('can only be called on the partner stack!')
+
+        return self._api.request('post', '/api/partstudios/d/' + did + '/w/' + wid + '/e/' + eid + '/features/rollback', body=body)
+
+    def get_partstudio_tessellatededges(self, did, wid, eid):
+        '''
+        Gets the tessellation of the edges of all parts in a part studio.
+
+        Args:
+            - did (str): Document ID
+            - wid (str): Workspace ID
+            - eid (str): Element ID
+
+        Returns:
+            - requests.Response: Onshape response data
+        '''
+
+        return self._api.request('get', '/api/partstudios/d/' + did + '/w/' + wid + '/e/' + eid + '/tessellatededges')
+
     def upload_blob(self, did, wid, filepath='./blob.json'):
         '''
         Uploads a file to a new blob element in the specified doc.

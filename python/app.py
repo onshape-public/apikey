@@ -2,7 +2,7 @@
 app
 ===
 
-Demos usage of the Onshape API
+Demos basic usage of the Onshape API
 '''
 
 from apikey.client import Client
@@ -28,9 +28,9 @@ c.get_document(did)
 asm = c.create_assembly(did, wid)
 
 if asm.json()['name'] == 'My Assembly':
-    print "Assembly created!"
+    print 'Assembly created!''
 else:
-    print "Assembly did not get created properly :("
+    print 'Assembly did not get created properly :('
 
 # upload blob
 blob = c.upload_blob(did, wid)
@@ -42,6 +42,6 @@ c.del_document(did)
 trashed_doc = c.get_document(did)
 
 if trashed_doc.json()['trash'] is True:
-    print "Everything is as it should be!"
+    print 'Everything is as it should be!'
 else:
-    print "Oops! Something went wrong :("
+    print 'Oops! Something went wrong :('
