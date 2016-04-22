@@ -47,13 +47,22 @@ Just replace "ACCESS KEY" and "SECRET KEY" with the values you got from the
 developer portal. To test on other stacks, you'll create another object in the file,
 with credentials for that specific stack.
 
-To run the application:
+To run the basic application:
 
 ```sh
 $ python app.py
 ```
 
-If you want to specify a different stack to test on, simply go into `app.py` and
+There's also a script, `rollback.py`, which works with the feature history to give you
+a visual history of a part studio's tessellation data. Run it like this:
+
+```sh
+$ python rollback.py
+```
+
+And simply provide document, workspace, and element IDs when prompted.
+
+If you want to specify a different stack to test on, simply go into `app.py` or `rollback.py` and
 change the `stack` parameter on this line:
 
 ```py
