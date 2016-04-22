@@ -1,3 +1,21 @@
+# mac os
 .DS_Store
+.Trashes
+.Spotlight-V100
+
+# node
+.npm
+.node_repl_history
+npm-debug.log
 node_modules
-Node/config/apikey.js
+
+# python
+*.pyc
+*.egg
+*.egg-info
+.eggs
+env
+
+# api keys
+node/config/apikey.js
+python/creds.json

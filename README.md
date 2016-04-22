@@ -6,7 +6,7 @@ Simple Node.js and Python apps to demonstrate API key usage
 
 ### Getting Started
 
-Please see the [node](https://github.com/onshape/apikey/tree/master/node) and
+Please see the [node](https://github.com/onshape/apikey/tree/master/Node) and
 [python](https://github.com/onshape/apikey/tree/master/python) folders for
 instructions on working with each of the applications.
 
