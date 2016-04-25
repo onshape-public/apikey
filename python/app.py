@@ -28,7 +28,7 @@ c.get_document(did)
 asm = c.create_assembly(did, wid)
 
 if asm.json()['name'] == 'My Assembly':
-    print 'Assembly created!''
+    print 'Assembly created!'
 else:
     print 'Assembly did not get created properly :('
 
