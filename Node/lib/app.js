@@ -1,6 +1,3 @@
-var util = require('./util.js');
-var errors = require('../config/errors.js');
-
 var onshape = require('./onshape.js');
 
 var getParts = function (documentId, wvm, wvmId, elementId, cb) {
@@ -60,7 +57,7 @@ var uploadBlobElement = function (documentId, workspaceId, file, mimeType, cb) {
   onshape.upload(opts, cb);
 }
 
-var getDocumentList = function(queryObject, cb) {
+var getDocuments = function(queryObject, cb) {
   var opts = {
     path: '/api/documents',
     query: queryObject
@@ -68,90 +65,11 @@ var getDocumentList = function(queryObject, cb) {
   onshape.get(opts, cb);
 }
 
-var massByMaterial = function (documentId, wvm, wvmId, elementId) {
-  var partsByMaterial = {};
-  var massesByMaterial = {};
-
-  var getPartsStep = function () {
-    getParts(documentId, wvm, wvmId, elementId, function (data) {
-      var partsList = JSON.parse(data.toString()); // it's a JSON array
-      for (var i = 0; i < partsList.length; i++) {
-        if (partsList[i]['material'] === undefined) {
-          continue;
-        }
-        if (!(partsList[i]['material']['id'] in partsByMaterial)) {
-          partsByMaterial[partsList[i]['material']['id']] = [];
-        }
-        partsByMaterial[partsList[i]['material']['id']].push(partsList[i]['partId']);
-      }
-      getMassPropertiesStep();
-    });
-  };
-
-  var getMassPropertiesStep = function () {
-    getMassProperties(documentId, wvm, wvmId, elementId, function (data) {
-      var massList = JSON.parse(data.toString());
-      var totalMass = 0;
-      for (var material in partsByMaterial) {
-        massesByMaterial[material] = 0;
-        for (var i = 0; i < partsByMaterial[material].length; i++) {
-          if (massList.bodies[partsByMaterial[material][i]]['hasMass']) {
-            massesByMaterial[material] += massList.bodies[partsByMaterial[material][i]]['mass'][0];
-            totalMass += massList.bodies[partsByMaterial[material][i]]['mass'][0];
-          }
-        }
-        console.log(material + ': ' + massesByMaterial[material]);
-      }
-      console.log('—-———-—-–—-–—––--——-–—-–––-–––');
-      console.log('Total mass: ' + totalMass);
-    });
-  };
-
-  getPartsStep();
-};
-
-var expensiveDoNothing = function (documentId, workspaceId) {
-  partStudioId = null;
-
-  var createPartStudioStep = function () {
-    var name = 'DELETE THIS PART STUDIO!';
-    createPartStudio(documentId, workspaceId, name, function (data) {
-      partStudioId = JSON.parse(data.toString()).id;
-      console.log('Created a part studio with id ' + partStudioId + '.');
-      deleteElementStep();
-    });
-  };
-
-  var deleteElementStep = function () {
-    deleteElement(documentId, workspaceId, partStudioId, function (data) {
-      console.log('Deleted that part studio with id ' + partStudioId + '.  Nothing has actually been accomplished.');
-    });
-  };
-
-  createPartStudioStep();
-}
-
-var uploadBlob = function (documentId, workspaceId, file, mimeType) {
-  uploadBlobElement(documentId, workspaceId, file, mimeType, function (data) {
-    var blobData = JSON.parse(data.toString());
-    console.log('Uploaded file to new element with id ' + blobData.id + ' and name ' + blobData.name + '.');
-  });
-}
-
-var getDocuments = function (queryObject) {
-  getDocumentList(queryObject, function (data) {
-    //console.log(data.toString());
-    var docs = JSON.parse(data.toString()).items;
-    for (var i = 0; i < docs.length; i++) {
-      var privacy = docs[i].public ? 'public' : 'private';
-      console.log(docs[i].name + '    ' + privacy + '   Owned by: ' + docs[i].owner.name);
-    }
-  })
-}
-
 module.exports = {
-  massByMaterial: massByMaterial,
-  expensiveDoNothing: expensiveDoNothing,
-  uploadBlob: uploadBlob,
+  getParts: getParts,
+  getMassProperties: getMassProperties,
+  createPartStudio: createPartStudio,
+  deleteElement: deleteElement,
+  uploadBlobElement: uploadBlobElement,
   getDocuments: getDocuments
 }

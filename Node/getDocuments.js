@@ -21,4 +21,15 @@ for (var i = 0; i < queryParams.length; i++) {
 }
 
 app = require('./lib/app.js');
-app.getDocuments(queryObject);
+
+var getDocuments = function (queryObject) {
+  app.getDocuments(queryObject, function (data) {
+    var docs = JSON.parse(data.toString()).items;
+    for (var i = 0; i < docs.length; i++) {
+      var privacy = docs[i].public ? 'public' : 'private';
+      console.log(docs[i].name + '    ' + privacy + '   Owned by: ' + docs[i].owner.name);
+    }
+  })
+}
+
+getDocuments(queryObject);
