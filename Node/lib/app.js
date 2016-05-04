@@ -60,6 +60,14 @@ var uploadBlobElement = function (documentId, workspaceId, file, mimeType, cb) {
   onshape.upload(opts, cb);
 }
 
+var getDocumentList = function(queryObject, cb) {
+  var opts = {
+    path: '/api/documents',
+    query: queryObject
+  }
+  onshape.get(opts, cb);
+}
+
 var massByMaterial = function (documentId, wvm, wvmId, elementId) {
   var partsByMaterial = {};
   var massesByMaterial = {};
@@ -130,8 +138,20 @@ var uploadBlob = function (documentId, workspaceId, file, mimeType) {
   });
 }
 
+var getDocuments = function (queryObject) {
+  getDocumentList(queryObject, function (data) {
+    //console.log(data.toString());
+    var docs = JSON.parse(data.toString()).items;
+    for (var i = 0; i < docs.length; i++) {
+      var privacy = docs[i].public ? 'public' : 'private';
+      console.log(docs[i].name + '    ' + privacy + '   Owned by: ' + docs[i].owner.name);
+    }
+  })
+}
+
 module.exports = {
   massByMaterial: massByMaterial,
   expensiveDoNothing: expensiveDoNothing,
-  uploadBlob: uploadBlob
+  uploadBlob: uploadBlob,
+  getDocuments: getDocuments
 }
