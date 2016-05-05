@@ -205,7 +205,7 @@ module.exports = (function (creds) {
       });
       res.on('end', function () { // if there's no data
         if (dataFired) {
-          return; cb(wholeData);
+          return cb(wholeData);
         }
         handle(null);
       });
