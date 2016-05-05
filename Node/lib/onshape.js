@@ -127,29 +127,21 @@ module.exports = (function (creds) {
     requestOpts.method = 'GET';
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
-      var dataFired = false;
       var wholeData = '';
-      var handle = function (data) {
+      res.on('data', function (data) {
+        wholeData += data;
+      });
+      res.on('end', function () {
         if (res.statusCode === 200) {
-          dataFired = true;
-          wholeData += data;
+          cb(wholeData);
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path + queryString);
           console.log('Status: ' + res.statusCode);
-          if (data) {
-            console.log(data.toString());
+          if (wholeData) {
+            console.log(wholeData.toString());
           }
           util.error(errors.notOKError);
         }
-      };
-      res.on('data', function (data) {
-        handle(data);
-      });
-      res.on('end', function () {
-        if (dataFired) {
-          return cb(wholeData);;
-        }
-        handle(null);
       });
     }).on('error', function (e) {
       console.log(e);
@@ -184,30 +176,22 @@ module.exports = (function (creds) {
     requestOpts.method = 'POST';
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
-      var dataFired = false;
       var wholeData = '';
-      var handle = function (data) {
+      res.on('data', function (data) {
+        wholeData += data;
+      });
+      res.on('end', function () {
         if (res.statusCode === 200) {
-          dataFired = true;
-          wholeData += data;
+          cb(wholeData);
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path);
           console.log(req.body);
           console.log('Status: ' + res.statusCode);
-          if (data) {
-            console.log(data.toString());
+          if (wholeData) {
+            console.log(wholeData.toString());
           }
           util.error(errors.notOKError);
         }
-      };
-      res.on('data', function (data) {
-        handle(data);
-      });
-      res.on('end', function () { // if there's no data
-        if (dataFired) {
-          return cb(wholeData);
-        }
-        handle(null);
       });
     }).on('error', function (e) {
       console.log(e);
@@ -244,29 +228,21 @@ module.exports = (function (creds) {
     requestOpts.method = 'DELETE';
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
-      var dataFired = false;
       var wholeData = '';
-      var handle = function (data) {
+      res.on('data', function (data) {
+        wholeData += data;
+      });
+      res.on('end', function () {
         if (res.statusCode === 200) {
-          dataFired = true;
-          wholeData += data;
+          cb(wholeData);
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path);
           console.log('Status: ' + res.statusCode);
-          if (data) {
-            console.log(data.toString());
+          if (wholeData) {
+            console.log(wholeData.toString());
           }
           util.error(errors.notOKError);
         }
-      };
-      res.on('data', function (data) {
-        handle(data);
-      });
-      res.on('end', function () { // if there's no data
-        if (dataFired) {
-          return cb(wholeData);
-        }
-        handle(null);
       });
     }).on('error', function (e) {
       console.log(e);
@@ -308,29 +284,21 @@ module.exports = (function (creds) {
 
     // set up request
     var req = protocol.request(requestOpts, function (res) {
-      var dataFired = false;
       var wholeData = '';
-      var handle = function (data) {
+      res.on('data', function (data) {
+        wholeData += data;
+      });
+      res.on('end', function () {
         if (res.statusCode === 200) {
-          dataFired = true;
-          wholeData += data;
+          cb(wholeData);
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path);
           console.log('Status: ' + res.statusCode);
-          if (data) {
-            console.log(data.toString());
+          if (wholeData) {
+            console.log(wholeData.toString());
           }
           util.error(errors.notOKError);
         }
-      }
-      res.on('data', function (data) {
-        handle(data);
-      });
-      res.on('end', function () { // if there's no data
-        if (dataFired) {
-          return cb(wholeData);
-        }
-        handle(null);
       });
     }).on('error', function (e) {
       console.log(e);
