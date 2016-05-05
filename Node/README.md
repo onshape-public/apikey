@@ -38,3 +38,13 @@ This uploadBlob.js sample app creates a new blob element from a given file.  (Re
 `This app will upload a given file to a new blob element.`  
 `    Usage: node uploadBlob.js -d <documentId> -w <workspaceId> -f <filepath> -t <MIME type>`  
 `An example file is provided at ./example/blobexample.txt, with MIME type text/plain.`
+
+# getDocuments
+
+This getDocuments.js sample app simply gets a list of documents with given query parameters.  (Requires OAuth2Read)
+
+### Usage:
+
+`This app will get documents available to the user with the specified query params.`  
+`    Usage: node getDocuments.js [--query <query>] [--filter <filter>] [--owner <owner>] [--ownerType <ownerType>] [--sortColumn <sortColumn>] [--sortOrder <sortOrder>] [--offset <offset>] [--limit <limit>]`  
+`See API documentation for query parameters.`

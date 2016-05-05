@@ -23,4 +23,12 @@ if (!argv['f']) {
 }
 
 app = require('./lib/app.js');
-app.uploadBlob(argv['d'], argv['w'], pathModule.normalize(argv['f']), argv['t']);
+
+var uploadBlob = function (documentId, workspaceId, file, mimeType) {
+  app.uploadBlobElement(documentId, workspaceId, file, mimeType, function (data) {
+    var blobData = JSON.parse(data.toString());
+    console.log('Uploaded file to new element with id ' + blobData.id + ' and name ' + blobData.name + '.');
+  });
+}
+
+uploadBlob(argv['d'], argv['w'], pathModule.normalize(argv['f']), argv['t']);

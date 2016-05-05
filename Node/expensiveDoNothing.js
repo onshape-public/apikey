@@ -15,4 +15,26 @@ if (!argv['d'] || !argv['w']) {
 }
 
 app = require('./lib/app.js');
-app.expensiveDoNothing(argv['d'], argv['w']);
+
+var expensiveDoNothing = function (documentId, workspaceId) {
+  partStudioId = null;
+
+  var createPartStudioStep = function () {
+    var name = 'DELETE THIS PART STUDIO!';
+    app.createPartStudio(documentId, workspaceId, name, function (data) {
+      partStudioId = JSON.parse(data.toString()).id;
+      console.log('Created a part studio with id ' + partStudioId + '.');
+      deleteElementStep();
+    });
+  };
+
+  var deleteElementStep = function () {
+    app.deleteElement(documentId, workspaceId, partStudioId, function (data) {
+      console.log('Deleted that part studio with id ' + partStudioId + '.  Nothing has actually been accomplished.');
+    });
+  };
+
+  createPartStudioStep();
+}
+
+expensiveDoNothing(argv['d'], argv['w']);
