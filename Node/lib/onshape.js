@@ -128,10 +128,11 @@ module.exports = (function (creds) {
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
       var dataFired = false;
+      var wholeData = '';
       var handle = function (data) {
         if (res.statusCode === 200) {
           dataFired = true;
-          cb(data);
+          wholeData += data;
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path + queryString);
           console.log('Status: ' + res.statusCode);
@@ -146,7 +147,7 @@ module.exports = (function (creds) {
       });
       res.on('end', function () {
         if (dataFired) {
-          return;
+          return cb(wholeData);;
         }
         handle(null);
       });
@@ -184,10 +185,11 @@ module.exports = (function (creds) {
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
       var dataFired = false;
+      var wholeData = '';
       var handle = function (data) {
         if (res.statusCode === 200) {
           dataFired = true;
-          cb(data);
+          wholeData += data;
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path);
           console.log(req.body);
@@ -203,7 +205,7 @@ module.exports = (function (creds) {
       });
       res.on('end', function () { // if there's no data
         if (dataFired) {
-          return;
+          return; cb(wholeData);
         }
         handle(null);
       });
@@ -243,10 +245,11 @@ module.exports = (function (creds) {
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
       var dataFired = false;
+      var wholeData = '';
       var handle = function (data) {
         if (res.statusCode === 200) {
           dataFired = true;
-          cb(data);
+          wholeData += data;
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path);
           console.log('Status: ' + res.statusCode);
@@ -261,7 +264,7 @@ module.exports = (function (creds) {
       });
       res.on('end', function () { // if there's no data
         if (dataFired) {
-          return;
+          return cb(wholeData);
         }
         handle(null);
       });
@@ -306,10 +309,11 @@ module.exports = (function (creds) {
     // set up request
     var req = protocol.request(requestOpts, function (res) {
       var dataFired = false;
+      var wholeData = '';
       var handle = function (data) {
         if (res.statusCode === 200) {
           dataFired = true;
-          cb(data);
+          wholeData += data;
         } else {
           console.log(requestOpts.method + ' ' + creds.baseUrl + path);
           console.log('Status: ' + res.statusCode);
@@ -324,7 +328,7 @@ module.exports = (function (creds) {
       });
       res.on('end', function () { // if there's no data
         if (dataFired) {
-          return;
+          return cb(wholeData);
         }
         handle(null);
       });

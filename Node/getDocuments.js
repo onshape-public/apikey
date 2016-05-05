@@ -27,9 +27,10 @@ var getDocuments = function (queryObject) {
     var docs = JSON.parse(data.toString()).items;
     for (var i = 0; i < docs.length; i++) {
       var privacy = docs[i].public ? 'public' : 'private';
-      console.log(docs[i].name + '    ' + privacy + '   Owned by: ' + docs[i].owner.name);
+      var ownerName = (docs[i].owner && ('name' in docs[i].owner)) ? docs[i].owner.name : 'nobody';
+      console.log(docs[i].name + '    ' + privacy + '   Owned by: ' + ownerName);
     }
-  })
-}
+  });
+};
 
 getDocuments(queryObject);
