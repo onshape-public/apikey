@@ -65,11 +65,27 @@ var getDocuments = function(queryObject, cb) {
   onshape.get(opts, cb);
 }
 
+var partStudioStl = function (documentId, workspaceId, elementId, queryObject, cb) {
+  var opts = {
+    d: documentId,
+    w: workspaceId,
+    e: elementId,
+    query: queryObject,
+    resource: 'partstudios',
+    subresource: 'stl',
+    headers: {
+      'Accept': 'application/vnd.onshape.v1+octet-stream'
+    }
+  };
+  onshape.get(opts, cb);
+}
+
 module.exports = {
   getParts: getParts,
   getMassProperties: getMassProperties,
   createPartStudio: createPartStudio,
   deleteElement: deleteElement,
   uploadBlobElement: uploadBlobElement,
-  getDocuments: getDocuments
+  getDocuments: getDocuments,
+  partStudioStl: partStudioStl
 }

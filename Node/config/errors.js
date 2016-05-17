@@ -11,6 +11,10 @@ module.exports = {
     'msg': 'You must specify a -d (documentId) and -w (workspaceId).',
     'status': 1
   },
+  'missingDWEError': {
+    'msg': 'You must specify a -d (documentId), -w (workspaceId), and -e (elementId).',
+    'status': 1
+  },
   'missingMimeType': {
     'msg': 'You must specify a -t (MIME type)',
     'status': 1
