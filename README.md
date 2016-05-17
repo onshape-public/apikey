@@ -129,6 +129,8 @@ function createSignature(method, url, nonce, authDate, contentType, accessKey, s
 }
 ```
 
+Some API endpoints return 307 redirects.  You must generate an Authorization header for the redirect as well, but please note that the server portion of the URL might be different, the redirect URL may contain query parameters that must be encoded in the Authorization header, etc.  Please see the samples for examples.
+
 ### API keys and OAuth
 
 Our API key workflow differs from our OAuth workflow in one important characteristic: an API key allows a *user* (specifically, a developer) to make requests, while OAuth allows an *application* to make requests on behalf of the user.  We require the OAuth workflow for apps in the Onshape App Store, so if you develop an app using API keys and want to distribute it through the App Store, you will need to change to OAuth.  Please see our OAuth sample apps for examples of how to make OAuth work (onshape/app-bom is a great place to start).  The good news is that we've structured API keys to work very similarly to OAuth in the operation of your app.  While you will need to build your Authorization header differently (and set up redirects and signins as in the onshape/app-bom sample), the API calls themselves will work the same in both versions, provided that the API key and the OAuth app have the same scopes.  An API key with the OAuth2Read and OAuth2Write scopes will have the same access to the same API endpoints as an OAuth application with the OAuth2Read and OAuth2Write scopes, for example.  (The only differences are when calling API endpoints relating to the OAuth application itself, since an API key request obviously does not come from an OAuth application.)

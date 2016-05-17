@@ -44,8 +44,8 @@ module.exports = (function (creds) {
     util.error(errors.badBaseUrlError);
   }
 
-  // this function will modify the object passed in the headers parameter
-  var buildHeaders = function (method, path, queryString, headers) {
+  var buildHeaders = function (method, path, queryString, inputHeaders) {
+    var headers = util.copyObject(inputHeaders);
     // the Date header needs to be reasonably (5 minutes) close to the server time when the request is received
     var authDate = (new Date()).toUTCString();
     // the On-Nonce header is a random (unique) string that serves to identify the request
@@ -93,10 +93,15 @@ module.exports = (function (creds) {
   }
 
   var buildQueryString = function (opts) {
-    if (!('query' in opts) || typeof opts.query !== 'object') {
+    if (!('query' in opts) || typeof opts.query !== 'object' || opts.query == null) {
       return '';
     }
     return querystring.stringify(opts.query);
+  }
+
+  var inputHeadersFromOpts = function (opts) {
+    return (!('headers' in opts) || typeof opts.headers !== 'object' || opts.headers == null) ?
+      {} : util.copyObject(opts.headers);
   }
 
   /*
@@ -106,11 +111,13 @@ module.exports = (function (creds) {
    *   v: version ID (only one of w, v, m)
    *   m: microversion ID (only one of w, v, m)
    *   e: elementId
+   *   baseUrl: base URL; if present, overrides apikey.js
    *   resource: top-level resource (partstudios)
    *   subresource: sub-resource, if any (massproperties)
    *   path: from /api/...; if present, overrides the other options
    *   accept: accept header (default: application/vnd.onshape.v1+json)
    *   query: query object
+   *   headers: headers object
    * }
    */
   var get = function (opts, cb) {
@@ -120,10 +127,12 @@ module.exports = (function (creds) {
     } else {
       path = buildDWMVEPath(opts);
     }
+    var baseUrl = ('baseUrl' in opts) ? opts.baseUrl : creds.baseUrl;
     var queryString = buildQueryString(opts);
-    var headers = buildHeaders('GET', path, queryString, {});
+    var inputHeaders = inputHeadersFromOpts(opts);
+    var headers = buildHeaders('GET', path, queryString, inputHeaders);
     if (queryString !== '') queryString = '?' + queryString;
-    var requestOpts = url.parse(creds.baseUrl + path + queryString);
+    var requestOpts = url.parse(baseUrl + path + queryString);
     requestOpts.method = 'GET';
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
@@ -134,8 +143,19 @@ module.exports = (function (creds) {
       res.on('end', function () {
         if (res.statusCode === 200) {
           cb(wholeData);
+        } else if (res.statusCode === 307) {
+          var redirectParsedUrl = url.parse(res.headers.location);
+          console.log('Redirecting to ' + res.headers.location);
+          // the redirect contains a query string, which the API key mechanism needs to encrypt
+          var redirectOpts = {
+            baseUrl: redirectParsedUrl.protocol + '//' + redirectParsedUrl.host,
+            path: redirectParsedUrl.pathname,
+            headers: inputHeaders,
+            query: querystring.parse(redirectParsedUrl.query)
+          };
+          get(redirectOpts, cb);
         } else {
-          console.log(requestOpts.method + ' ' + creds.baseUrl + path + queryString);
+          console.log(requestOpts.method + ' ' + baseUrl + path + queryString);
           console.log('Status: ' + res.statusCode);
           if (wholeData) {
             console.log(wholeData.toString());
@@ -144,6 +164,7 @@ module.exports = (function (creds) {
         }
       });
     }).on('error', function (e) {
+      console.log(requestOpts.method + ' ' + baseUrl + path + queryString);
       console.log(e);
       util.error(errors.getError);
     });
@@ -157,11 +178,13 @@ module.exports = (function (creds) {
    *   v: version ID (only one of w, v, m)
    *   m: microversion ID (only one of w, v, m)
    *   e: elementId
+   *   baseUrl: base URL; if present, overrides apikey.js
    *   resource: top-level resource (partstudios)
    *   subresource: sub-resource, if any (massproperties)
    *   path: from /api/...; if present, overrides the other options
    *   accept: accept header (default: application/vnd.onshape.v1+json)
    *   body: POST body
+   *   headers: headers object
    * }
    */
   var post = function (opts, cb) {
@@ -171,8 +194,9 @@ module.exports = (function (creds) {
     } else {
       path = buildDWMVEPath(opts);
     }
-    var headers = buildHeaders('POST', path, '', {});
-    var requestOpts = url.parse(creds.baseUrl + path);
+    var baseUrl = ('baseUrl' in opts) ? opts.baseUrl : creds.baseUrl;
+    var headers = buildHeaders('POST', path, '', inputHeadersFromOpts(opts));
+    var requestOpts = url.parse(baseUrl + path);
     requestOpts.method = 'POST';
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
@@ -184,7 +208,7 @@ module.exports = (function (creds) {
         if (res.statusCode === 200) {
           cb(wholeData);
         } else {
-          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
+          console.log(requestOpts.method + ' ' + baseUrl + path);
           console.log(req.body);
           console.log('Status: ' + res.statusCode);
           if (wholeData) {
@@ -194,6 +218,7 @@ module.exports = (function (creds) {
         }
       });
     }).on('error', function (e) {
+      console.log(requestOpts.method + ' ' + baseUrl + path);
       console.log(e);
       util.error(errors.postError);
     });
@@ -210,10 +235,11 @@ module.exports = (function (creds) {
    *   d: document ID
    *   w: workspace ID
    *   e: elementId
+   *   baseUrl: base URL; if present, overrides apikey.js
    *   resource: top-level resource (partstudios)
    *   subresource: sub-resource, if any (massproperties)
    *   path: from /api/...; if present, overrides the other options
-   *   accept: accept header (default: application/vnd.onshape.v1+json)
+   *   headers: headers object
    * }
    */
   var del = function (opts, cb) { // 'delete' is a reserved keyword, so it can't be a variable name
@@ -223,8 +249,9 @@ module.exports = (function (creds) {
     } else {
       path = buildDWMVEPath(opts);
     }
-    var headers = buildHeaders('DELETE', path, '', {});
-    var requestOpts = url.parse(creds.baseUrl + path);
+    var baseUrl = ('baseUrl' in opts) ? opts.baseUrl : creds.baseUrl;
+    var headers = buildHeaders('DELETE', path, '', inputHeadersFromOpts(opts));
+    var requestOpts = url.parse(baseUrl + path);
     requestOpts.method = 'DELETE';
     requestOpts.headers = headers;
     var req = protocol.request(requestOpts, function (res) {
@@ -236,7 +263,7 @@ module.exports = (function (creds) {
         if (res.statusCode === 200) {
           cb(wholeData);
         } else {
-          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
+          console.log(requestOpts.method + ' ' + baseUrl + path);
           console.log('Status: ' + res.statusCode);
           if (wholeData) {
             console.log(wholeData.toString());
@@ -245,6 +272,7 @@ module.exports = (function (creds) {
         }
       });
     }).on('error', function (e) {
+      console.log(requestOpts.method + ' ' + baseUrl + path);
       console.log(e);
       util.error(errors.deleteError);
     });
@@ -258,10 +286,11 @@ module.exports = (function (creds) {
    *   v: version ID (only one of w, v, m)
    *   m: microversion ID (only one of w, v, m)
    *   e: elementId
+   *   baseUrl: base URL; if present, overrides apikey.js
    *   resource: top-level resource (partstudios)
    *   subresource: sub-resource, if any (massproperties)
    *   path: from /api/...; if present, overrides the other options
-   *   accept: accept header (default: application/vnd.onshape.v1+json)
+   *   headers: headers object
    *   file: local path of file to upload
    *   mimeType: MIME type of file
    *   body: other form data; should be plain key/value pairs
@@ -274,11 +303,14 @@ module.exports = (function (creds) {
     } else {
       path = buildDWMVEPath(opts);
     }
+    var baseUrl = ('baseUrl' in opts) ? opts.baseUrl : creds.baseUrl;
 
     // set up headers
+    var inputHeaders = inputHeadersFromOpts(opts);
     var boundaryKey = Math.random().toString(16); // random string for boundary
-    var headers = buildHeaders('POST', path, '', {'Content-Type': 'multipart/form-data; boundary="' + boundaryKey + '"'});
-    var requestOpts = url.parse(creds.baseUrl + path);
+    inputHeaders['Content-Type'] = 'multipart/form-data; boundary="' + boundaryKey + '"';
+    var headers = buildHeaders('POST', path, '', inputHeaders);
+    var requestOpts = url.parse(baseUrl + path);
     requestOpts.method = 'POST';
     requestOpts.headers = headers;
 
@@ -292,7 +324,7 @@ module.exports = (function (creds) {
         if (res.statusCode === 200) {
           cb(wholeData);
         } else {
-          console.log(requestOpts.method + ' ' + creds.baseUrl + path);
+          console.log(requestOpts.method + ' ' + baseUrl + path);
           console.log('Status: ' + res.statusCode);
           if (wholeData) {
             console.log(wholeData.toString());
@@ -301,6 +333,7 @@ module.exports = (function (creds) {
         }
       });
     }).on('error', function (e) {
+      console.log(requestOpts.method + ' ' + baseUrl + path);
       console.log(e);
       util.error(errors.postError);
     });
