@@ -44,8 +44,8 @@ module.exports = (function (creds) {
     util.error(errors.badBaseUrlError);
   }
 
-  // this function will modify the object passed in the headers parameter
-  var buildHeaders = function (method, path, queryString, headers) {
+  var buildHeaders = function (method, path, queryString, inputHeaders) {
+    var headers = util.copyObject(inputHeaders);
     // the Date header needs to be reasonably (5 minutes) close to the server time when the request is received
     var authDate = (new Date()).toUTCString();
     // the On-Nonce header is a random (unique) string that serves to identify the request
@@ -99,6 +99,11 @@ module.exports = (function (creds) {
     return querystring.stringify(opts.query);
   }
 
+  var inputHeadersFromOpts = function (opts) {
+    return (!('headers' in opts) || typeof opts.headers !== 'object' || opts.headers == null) ?
+      {} : util.copyObject(opts.headers);
+  }
+
   /*
    * opts: {
    *   d: document ID
@@ -124,10 +129,8 @@ module.exports = (function (creds) {
     }
     var baseUrl = ('baseUrl' in opts) ? opts.baseUrl : creds.baseUrl;
     var queryString = buildQueryString(opts);
-    if (!('headers' in opts) || typeof opts.headers !== 'object' || opts.headers == null) {
-      opts.headers = {};
-    }
-    var headers = buildHeaders('GET', path, queryString, opts.headers);
+    var inputHeaders = inputHeadersFromOpts(opts);
+    var headers = buildHeaders('GET', path, queryString, inputHeaders);
     if (queryString !== '') queryString = '?' + queryString;
     var requestOpts = url.parse(baseUrl + path + queryString);
     requestOpts.method = 'GET';
@@ -147,7 +150,7 @@ module.exports = (function (creds) {
           var redirectOpts = {
             baseUrl: redirectParsedUrl.protocol + '//' + redirectParsedUrl.host,
             path: redirectParsedUrl.pathname,
-            headers: opts.headers,
+            headers: inputHeaders,
             query: querystring.parse(redirectParsedUrl.query)
           };
           get(redirectOpts, cb);
@@ -192,10 +195,7 @@ module.exports = (function (creds) {
       path = buildDWMVEPath(opts);
     }
     var baseUrl = ('baseUrl' in opts) ? opts.baseUrl : creds.baseUrl;
-    if (!('headers' in opts) || typeof opts.headers !== 'object' || opts.headers == null) {
-      opts.headers = {};
-    }
-    var headers = buildHeaders('POST', path, '', opts.headers);
+    var headers = buildHeaders('POST', path, '', inputHeadersFromOpts(opts));
     var requestOpts = url.parse(baseUrl + path);
     requestOpts.method = 'POST';
     requestOpts.headers = headers;
@@ -250,10 +250,7 @@ module.exports = (function (creds) {
       path = buildDWMVEPath(opts);
     }
     var baseUrl = ('baseUrl' in opts) ? opts.baseUrl : creds.baseUrl;
-    if (!('headers' in opts) || typeof opts.headers !== 'object' || opts.headers == null) {
-      opts.headers = {};
-    }
-    var headers = buildHeaders('DELETE', path, '', opts.headers);
+    var headers = buildHeaders('DELETE', path, '', inputHeadersFromOpts(opts));
     var requestOpts = url.parse(baseUrl + path);
     requestOpts.method = 'DELETE';
     requestOpts.headers = headers;
@@ -309,12 +306,10 @@ module.exports = (function (creds) {
     var baseUrl = ('baseUrl' in opts) ? opts.baseUrl : creds.baseUrl;
 
     // set up headers
-    if (!('headers' in opts) || typeof opts.headers !== 'object' || opts.headers == null) {
-      opts.headers = {};
-    }
+    var inputHeaders = inputHeadersFromOpts(opts);
     var boundaryKey = Math.random().toString(16); // random string for boundary
-    opts.headers['Content-Type'] = 'multipart/form-data; boundary="' + boundaryKey + '"';
-    var headers = buildHeaders('POST', path, '', opts.headers);
+    inputHeaders['Content-Type'] = 'multipart/form-data; boundary="' + boundaryKey + '"';
+    var headers = buildHeaders('POST', path, '', inputHeaders);
     var requestOpts = url.parse(baseUrl + path);
     requestOpts.method = 'POST';
     requestOpts.headers = headers;
