@@ -213,3 +213,21 @@ class Client():
         payload += '\r\n--' + boundary_key + '--'
 
         return self._api.request('post', '/api/blobelements/d/' + did + '/w/' + wid, headers=req_headers, body=payload)
+
+    def part_studio_stl(self, did, wid, eid):
+        '''
+        Exports STL export from a part studio
+
+        Args:
+            - did (str): Document ID
+            - wid (str): Workspace ID
+            - eid (str): Element ID
+
+        Returns:
+            - requests.Response: Onshape response data
+        '''
+
+        req_headers = {
+            'Accept': 'application/vnd.onshape.v1+octet-stream'
+        }
+        return self._api.request('get', '/api/partstudios/d/' + did + '/w/' + wid + '/e/' + eid + '/stl', headers=req_headers)

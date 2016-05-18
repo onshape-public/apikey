@@ -17,6 +17,8 @@ import base64
 import urllib
 import datetime
 import requests
+from urlparse import urlparse
+from urlparse import parse_qs
 
 __all__ = [
     'Onshape'
@@ -154,7 +156,7 @@ class Onshape():
 
         return req_headers
 
-    def request(self, method, path, query={}, headers={}, body={}):
+    def request(self, method, path, query={}, headers={}, body={}, base_url=None):
         '''
         Issues a request to Onshape
 
@@ -164,13 +166,16 @@ class Onshape():
             - query (dict, default={}): Query params in key-value pairs
             - headers (dict, default={}): Key-value pairs of headers
             - body (dict, default={}): Body for POST request
+            - base_url (str, default=None): Host, including scheme and port (if different from creds file)
 
         Returns:
             - requests.Response: Object containing the response from Onshape
         '''
 
         req_headers = self._make_headers(method, path, query, headers)
-        url = self._url + path + '?' + urllib.urlencode(query)
+        if base_url is None:
+            base_url = self._url
+        url = base_url + path + '?' + urllib.urlencode(query)
 
         utils.log(body)
         utils.log(req_headers)
@@ -179,9 +184,22 @@ class Onshape():
         # only parse as json string if we have to
         body = json.dumps(body) if type(body) == dict else body
 
-        res = requests.request(method, url, headers=req_headers, data=body)
+        res = requests.request(method, url, headers=req_headers, data=body, allow_redirects=False)
 
-        if res.status_code != 200:
+        if res.status_code == 307:
+            loc = res.headers["Location"]
+            utils.log('request redirected to: ' + loc)
+            loc_components = urlparse(loc)
+            scheme = loc_components.scheme
+            netloc = loc_components.netloc
+            new_path = loc_components.path
+            parsed_query = parse_qs(loc_components.query)
+            new_query = {}
+            for key in parsed_query:
+                new_query[key] = parsed_query[key][0] # this will not work for repeated query params
+            new_base_url = scheme + '://' + netloc
+            return self.request(method, new_path, query=new_query, headers=headers, base_url=new_base_url)
+        elif res.status_code != 200:
             utils.log('request failed, details: ' + res.text, level=1)
         else:
             utils.log('request succeeded, details: ' + res.text)
