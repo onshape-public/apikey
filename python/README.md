@@ -62,6 +62,12 @@ $ python rollback.py
 
 And simply provide document, workspace, and element IDs when prompted.
 
+```sh
+$ python exportstl.py
+```
+
+will print an STL representation of a given part studio to the console, but you will need to specify the document ID, workspace ID, and element ID in the exportstl.py file itself where marked.
+
 If you want to specify a different stack to test on, simply go into `app.py` or `rollback.py` and
 change the `stack` parameter on this line:
 
