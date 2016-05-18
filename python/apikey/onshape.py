@@ -166,7 +166,7 @@ class Onshape():
             - query (dict, default={}): Query params in key-value pairs
             - headers (dict, default={}): Key-value pairs of headers
             - body (dict, default={}): Body for POST request
-            - base_url (str, default=None): Host (if different from creds file)
+            - base_url (str, default=None): Host, including scheme and port (if different from creds file)
 
         Returns:
             - requests.Response: Object containing the response from Onshape
