@@ -10,6 +10,6 @@ var prod = {
 	'baseUrl': 'https://cad.onshape.com',
 	'accessKey': ACCESS_KEY,
 	'secretKey': SECRET_KEY
-}
+};
 
 module.exports = partner;
