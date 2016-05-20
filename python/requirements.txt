@@ -18,5 +18,4 @@ simplegeneric==0.8.1
 six==1.10.0
 traitlets==4.2.1
 uncommitted==1.6
-vboxapi==1.0
 virtualenv==15.0.1

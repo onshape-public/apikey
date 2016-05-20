@@ -23,18 +23,20 @@ class Client():
 
     Attributes:
         - stack (str, default='https://partner.dev.onshape.com'): Base URL
+        - logging (bool, default=True): Turn logging on or off
     '''
 
-    def __init__(self, stack='https://partner.dev.onshape.com'):
+    def __init__(self, stack='https://partner.dev.onshape.com', logging=True):
         '''
         Instantiates a new Onshape client.
 
         Args:
             - stack (str, default='https://partner.dev.onshape.com'): Base URL
+            - logging (bool, default=True): Turn logging on or off
         '''
 
         self._stack = stack
-        self._api = Onshape(stack)
+        self._api = Onshape(stack=stack, logging=logging)
 
     def new_document(self, name='Test Document', owner_type=0, public=False):
         '''
