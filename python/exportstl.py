@@ -14,15 +14,15 @@ stacks = {
 }
 
 # create instance of the onshape client; change key to test on another stack
-c = Client(stack=stacks['cad'])
+c = Client(stack=stacks['partner'], logging=True)
 
-# change these to your own IDs
-did = 'DOCUMENT_ID'
-wid = 'WORKSPACE_ID'
-eid = 'ELEMENT_ID'
+# get features for doc
+did = raw_input('Enter document ID: ')
+wid = raw_input('Enter workspace ID: ')
+eid = raw_input('Enter element ID: ')
 
 # get the STL export
 stl = c.part_studio_stl(did, wid, eid)
 
-# print it to the console (because the imagination is the "best" STL visualization tool)
-print stl
+# print to the console
+print stl.text

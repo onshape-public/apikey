@@ -21,7 +21,7 @@ stacks = {
 }
 
 # create instance of the onshape client; change key to test on another stack
-c = Client(stack=stacks['partner'])
+c = Client(stack=stacks['partner'], logging=True)
 
 # get features for doc
 did = raw_input('Enter document ID: ')

@@ -14,7 +14,7 @@ stacks = {
 }
 
 # create instance of the onshape client; change key to test on another stack
-c = Client(stack=stacks['partner'])
+c = Client(stack=stacks['partner'], logging=True)
 
 # make a new document and grab the document ID and workspace ID
 new_doc = c.new_document(public=True).json()
@@ -22,15 +22,16 @@ did = new_doc['id']
 wid = new_doc['defaultWorkspace']['id']
 
 # get the document details
-c.get_document(did)
+details = c.get_document(did)
+print 'Document name: ' + details.json()['name']
 
 # create a new assembly
 asm = c.create_assembly(did, wid)
 
 if asm.json()['name'] == 'My Assembly':
-    print 'Assembly created!'
+    print 'Assembly created'
 else:
-    print 'Assembly did not get created properly :('
+    print 'Error: Assembly not created'
 
 # upload blob
 blob = c.upload_blob(did, wid)
@@ -42,6 +43,6 @@ c.del_document(did)
 trashed_doc = c.get_document(did)
 
 if trashed_doc.json()['trash'] is True:
-    print 'Everything is as it should be!'
+    print 'Document now in trash'
 else:
-    print 'Oops! Something went wrong :('
+    print 'Error: Document not trashed'

@@ -32,9 +32,10 @@ class Onshape():
     Attributes:
         - stack (str): Base URL
         - creds (str, default='./creds.json'): Credentials location
+        - logging (bool, default=True): Turn logging on or off
     '''
 
-    def __init__(self, stack, creds='./creds.json'):
+    def __init__(self, stack, creds='./creds.json', logging=True):
         '''
         Instantiates an instance of the Onshape class. Reads credentials from a JSON file
         of this format:
@@ -69,12 +70,14 @@ class Onshape():
                     self._url = stack
                     self._access_key = stacks[stack]['access_key'].encode('utf-8')
                     self._secret_key = stacks[stack]['secret_key'].encode('utf-8')
+                    self._logging = logging
                 else:
                     raise ValueError('specified stack not in file')
             except TypeError:
                 raise ValueError('%s is not valid json' % creds)
 
-        utils.log('onshape instance created: url = %s, access key = %s' % (self._url, self._access_key))
+        if self._logging:
+            utils.log('onshape instance created: url = %s, access key = %s' % (self._url, self._access_key))
 
     def _make_nonce(self):
         '''
@@ -87,7 +90,8 @@ class Onshape():
         chars = string.digits + string.ascii_letters
         nonce = ''.join(random.choice(chars) for i in range(25))
 
-        utils.log('nonce created: %s' % nonce)
+        if self._logging:
+            utils.log('nonce created: %s' % nonce)
 
         return nonce
 
@@ -112,12 +116,13 @@ class Onshape():
         signature = base64.b64encode(hmac.new(self._secret_key, hmac_str, digestmod=hashlib.sha256).digest())
         auth = 'On ' + self._access_key + ':HmacSHA256:' + signature.decode('utf-8')
 
-        utils.log({
-            'query': query,
-            'hmac_str': hmac_str,
-            'signature': signature,
-            'auth': auth
-        })
+        if self._logging:
+            utils.log({
+                'query': query,
+                'hmac_str': hmac_str,
+                'signature': signature,
+                'auth': auth
+            })
 
         return auth
 
@@ -177,31 +182,35 @@ class Onshape():
             base_url = self._url
         url = base_url + path + '?' + urllib.urlencode(query)
 
-        utils.log(body)
-        utils.log(req_headers)
-        utils.log('request url: ' + url)
+        if self._logging:
+            utils.log(body)
+            utils.log(req_headers)
+            utils.log('request url: ' + url)
 
         # only parse as json string if we have to
         body = json.dumps(body) if type(body) == dict else body
 
-        res = requests.request(method, url, headers=req_headers, data=body, allow_redirects=False)
+        res = requests.request(method, url, headers=req_headers, data=body, allow_redirects=False, stream=True)
 
         if res.status_code == 307:
-            loc = res.headers["Location"]
-            utils.log('request redirected to: ' + loc)
-            loc_components = urlparse(loc)
-            scheme = loc_components.scheme
-            netloc = loc_components.netloc
-            new_path = loc_components.path
-            parsed_query = parse_qs(loc_components.query)
+            location = urlparse(res.headers["Location"])
+            querystring = parse_qs(location.query)
+
+            if self._logging:
+                utils.log('request redirected to: ' + location.geturl())
+
             new_query = {}
-            for key in parsed_query:
-                new_query[key] = parsed_query[key][0] # this will not work for repeated query params
-            new_base_url = scheme + '://' + netloc
-            return self.request(method, new_path, query=new_query, headers=headers, base_url=new_base_url)
-        elif res.status_code != 200:
-            utils.log('request failed, details: ' + res.text, level=1)
+            new_base_url = location.scheme + '://' + location.netloc
+
+            for key in querystring:
+                new_query[key] = querystring[key][0]  # won't work for repeated query params
+
+            return self.request(method, location.path, query=new_query, headers=headers, base_url=new_base_url)
+        elif not 200 <= res.status_code <= 206:
+            if self._logging:
+                utils.log('request failed, details: ' + res.text, level=1)
         else:
-            utils.log('request succeeded, details: ' + res.text)
+            if self._logging:
+                utils.log('request succeeded, details: ' + res.text)
 
         return res
