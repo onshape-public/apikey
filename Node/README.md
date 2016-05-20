@@ -3,6 +3,8 @@ This series of sample apps illustrate the use of API keys to call Onshape APIs w
 massByMaterial
 expensiveDoNothing
 uploadBlob
+getDocuments
+exportStl
 
 To use them, you must have node and npm installed on your computer, and run `npm install` on the command line in this directory to install the dependencies.  Run the app with `node <app>` in this directory.  Try `node <app> -u` or `node <app> --usage` to print a usage message specifying the parameters.
 
