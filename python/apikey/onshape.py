@@ -152,7 +152,7 @@ class Onshape():
             'On-Nonce': nonce,
             'Authorization': auth,
             'User-Agent': 'Onshape Python Sample App',
-            'Accept': 'application/vnd.onshape.v1+json'
+            'Accept': 'application/json'
         }
 
         # add in user-defined headers
