@@ -8,7 +8,7 @@ exportStl
 
 To use them, you must have node and npm installed on your computer, and run `npm install` on the command line in this directory to install the dependencies.  Run the app with `node <app>` in this directory.  Try `node <app> -u` or `node <app> --usage` to print a usage message specifying the parameters.
 
-You must also copy config/apikeyexample.js to a new file called apikey.js inside the config directory; build an API key (with at least the relevant permissions) through the Developer Portal, and add these credentials to it.  Make sure that the API key corresponds to the stack against which you are running the app -- if you are running it against partner.dev.onshape.com, create the API key with the partner Developer Portal, not the one on production.
+You must also copy config/apikeyexample.js to a new file called apikey.js inside the config directory; build an API key (with at least the relevant permissions) through the Developer Portal, and add these credentials to it.  Make sure that the API key corresponds to the stack against which you are running the app -- for most users it should just be cad.onshape.com.
 
 # massByMaterial
 
