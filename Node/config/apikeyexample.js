@@ -1,15 +1,9 @@
 // This is an example of a API key file.
 // Copy this to apikey.js in the same directory and replace the placeholders with appropriate values.
-var partner = {
-  'baseUrl': 'https://partner.dev.onshape.com',
-  'accessKey': ACCESS_KEY,
-  'secretKey': SECRET_KEY
-};
-
 var prod = {
 	'baseUrl': 'https://cad.onshape.com',
 	'accessKey': ACCESS_KEY,
 	'secretKey': SECRET_KEY
 };
 
-module.exports = partner;
+module.exports = prod;

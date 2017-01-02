@@ -22,16 +22,16 @@ class Client():
     - Get a list of documents
 
     Attributes:
-        - stack (str, default='https://partner.dev.onshape.com'): Base URL
+        - stack (str, default='https://cad.onshape.com'): Base URL
         - logging (bool, default=True): Turn logging on or off
     '''
 
-    def __init__(self, stack='https://partner.dev.onshape.com', logging=True):
+    def __init__(self, stack='https://cad.onshape.com', logging=True):
         '''
         Instantiates a new Onshape client.
 
         Args:
-            - stack (str, default='https://partner.dev.onshape.com'): Base URL
+            - stack (str, default='https://cad.onshape.com'): Base URL
             - logging (bool, default=True): Turn logging on or off
         '''
 
@@ -54,7 +54,7 @@ class Client():
         payload = {
             'name': name,
             'ownerType': owner_type,
-            'public': public
+            'isPublic': public
         }
 
         return self._api.request('post', '/api/documents', body=payload)
@@ -146,25 +146,6 @@ class Client():
         '''
 
         return self._api.request('get', '/api/partstudios/d/' + did + '/w/' + wid + '/e/' + eid + '/features')
-
-    def update_rollback(self, did, wid, eid, body):
-        '''
-        Move the rollback bar in the feature list for a part studio (partner stack only)
-
-        Args:
-            - did (str): Document ID
-            - wid (str): Workspace ID
-            - eid (str): Element ID
-            - body (dict): POST body
-
-        Returns:
-            - requests.Response: Onshape response data
-        '''
-
-        if self._stack != 'https://partner.dev.onshape.com':
-            raise ValueError('can only be called on the partner stack!')
-
-        return self._api.request('post', '/api/partstudios/d/' + did + '/w/' + wid + '/e/' + eid + '/features/rollback', body=body)
 
     def get_partstudio_tessellatededges(self, did, wid, eid):
         '''

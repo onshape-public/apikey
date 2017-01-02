@@ -45,10 +45,6 @@ class Onshape():
                     "access_key": "YOUR KEY HERE",
                     "secret_key": "YOUR KEY HERE"
                 },
-                "https://partner.dev.onshape.com": {
-                    "access_key": "YOUR KEY HERE",
-                    "secret_key": "YOUR KEY HERE"
-                },
                 etc... add new object for each stack to test on
             }
 

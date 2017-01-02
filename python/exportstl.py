@@ -9,12 +9,11 @@ from apikey.client import Client
 
 # stacks to choose from
 stacks = {
-    'partner': 'https://partner.dev.onshape.com',
     'cad': 'https://cad.onshape.com'
 }
 
 # create instance of the onshape client; change key to test on another stack
-c = Client(stack=stacks['partner'], logging=True)
+c = Client(stack=stacks['cad'], logging=True)
 
 # get features for doc
 did = raw_input('Enter document ID: ')

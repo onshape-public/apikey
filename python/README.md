@@ -35,10 +35,6 @@ Create a `creds.json` file in the root project directory, with the following for
     "https://partner.dev.onshape.com": {
         "access_key": "ACCESS KEY",
         "secret_key": "SECRET KEY"
-    },
-    "https://cad.onshape.com": {
-        "access_key": "ACCESS KEY",
-        "secret_key": "SECRET KEY"
     }
 }
 ```
@@ -53,20 +49,11 @@ To run the basic application:
 $ python app.py
 ```
 
-There's also a script, `rollback.py`, which works with the feature history to give you
-a visual history of a part studio's tessellation data. Run it like this:
-
-```sh
-$ python rollback.py
-```
-
-And simply provide document, workspace, and element IDs when prompted.
+To print an STL representation of a given part studio to the console:
 
 ```sh
 $ python exportstl.py
 ```
-
-will print an STL representation of a given part studio to the console.
 
 If you want to specify a different stack to test on, simply go into the file you're running and
 change the `stack` parameter on this line:
@@ -75,7 +62,7 @@ change the `stack` parameter on this line:
 c = Client(stack='NEW STACK HERE')
 ```
 
-### Working w/ API Keys
+### Working with API Keys
 
 For general information on our API keys and how they work, read this
 [document](https://github.com/onshape/apikey/blob/master/README.md). For general
