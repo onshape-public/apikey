@@ -32,7 +32,7 @@ Create a `creds.json` file in the root project directory, with the following for
 
 ```json
 {
-    "https://partner.dev.onshape.com": {
+    "https://cad.onshape.com": {
         "access_key": "ACCESS KEY",
         "secret_key": "SECRET KEY"
     }
