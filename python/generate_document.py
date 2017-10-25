@@ -19,7 +19,7 @@ stacks = {
 c = Client(stack=stacks['cad'], logging=True)
 
 # make a new document and grab the document ID and workspace ID
-new_doc = c.new_document(public=True).json()
+new_doc = c.new_document(name="input",public=True).json()
 did = new_doc['id']
 wid = new_doc['defaultWorkspace']['id']
 
