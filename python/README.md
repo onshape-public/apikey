@@ -14,15 +14,36 @@ Install the dependencies:
 
 Then, from this folder:
 
+--for Linux:
 ```sh
 $ virtualenv -p /path/to/python2 env && source env/bin/activate
 ```
 
+--for Windows:
+```sh
+$ virtualenv -p /path/to/python2.exe env && env/Scripts/activate.bat
+```
+References:
+
+* https://stackoverflow.com/questions/8921188/issue-with-virtualenv-cannot-activate
+* https://virtualenv.pypa.io/en/stable/userguide/#activate-script
+
 You can now install the needed Python packages:
 
+--for Linux:
 ```sh
 $ pip install -r requirements.txt
 ```
+
+--for Windows:
+```sh
+$ pip install -r requirements-win.txt
+```
+
+The windows-specific requirements file encompasses libraries that work for Win-OS
+
+References:
+* https://pypi.python.org/pypi/pyreadline
 
 To exit the virtual environment at any time, simply type `deactivate`.
 
