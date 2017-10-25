@@ -30,9 +30,20 @@ References:
 
 You can now install the needed Python packages:
 
+--for Linux:
 ```sh
 $ pip install -r requirements.txt
 ```
+
+--for Windows:
+```sh
+$ pip install -r requirements-win.txt
+```
+
+The windows-specific requirements file encompasses libraries that work for Win-OS
+
+References:
+* https://pypi.python.org/pypi/pyreadline
 
 To exit the virtual environment at any time, simply type `deactivate`.
 
