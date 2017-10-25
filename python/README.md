@@ -21,7 +21,7 @@ $ virtualenv -p /path/to/python2 env && source env/bin/activate
 
 --for Windows:
 ```sh
-$ virtualenv -p /path/to/python2 env && env/Scripts/activate.bat
+$ virtualenv -p /path/to/python2.exe env && env/Scripts/activate.bat
 ```
 References:
 
