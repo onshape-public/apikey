@@ -14,9 +14,18 @@ Install the dependencies:
 
 Then, from this folder:
 
+--for Linux:
 ```sh
 $ virtualenv -p /path/to/python2 env && source env/bin/activate
 ```
+
+--for Windows:
+```sh
+$ virtualenv -p /path/to/python2 env && env/Scripts/activate.bat
+```
+References:
+1 - https://stackoverflow.com/questions/8921188/issue-with-virtualenv-cannot-activate
+2 - https://virtualenv.pypa.io/en/stable/userguide/#activate-script
 
 You can now install the needed Python packages:
 
