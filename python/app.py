@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 '''
 app
 ===
@@ -22,15 +24,15 @@ wid = new_doc['defaultWorkspace']['id']
 
 # get the document details
 details = c.get_document(did)
-print 'Document name: ' + details.json()['name']
+print('Document name: ' + details.json()['name'])
 
 # create a new assembly
 asm = c.create_assembly(did, wid)
 
 if asm.json()['name'] == 'My Assembly':
-    print 'Assembly created'
+    print('Assembly created')
 else:
-    print 'Error: Assembly not created'
+    print('Error: Assembly not created')
 
 # upload blob
 blob = c.upload_blob(did, wid)
@@ -42,6 +44,6 @@ c.del_document(did)
 trashed_doc = c.get_document(did)
 
 if trashed_doc.json()['trash'] is True:
-    print 'Document now in trash'
+    print('Document now in trash')
 else:
-    print 'Error: Document not trashed'
+    print('Error: Document not trashed')

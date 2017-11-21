@@ -5,7 +5,12 @@ client
 Convenience functions for working with the Onshape API
 '''
 
-from onshape import Onshape
+import sys
+
+if sys.version_info.major == 2:
+    from onshape import Onshape
+else:
+    from .onshape import Onshape
 
 import mimetypes
 import random
