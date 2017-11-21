@@ -10,13 +10,15 @@ import sys
 if sys.version_info.major == 2:
     import utils
     import urllib
-    from urlparse import urlparse, urlencode
+    from urlparse import urlparse
     from urlparse import parse_qs
+    from urllib import urlencode
 else:
     from . import utils
     import urllib.parse
-    from urllib.parse import urlparse, urlencode
+    from urllib.parse import urlparse
     from urllib.parse import parse_qs
+    from urllib.parse import urlencode
 
 import os
 import random
