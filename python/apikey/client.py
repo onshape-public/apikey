@@ -108,7 +108,7 @@ class Client():
 
         return self._api.request('get', '/api/documents/' + did)
 
-    def list_documents(self):
+    def list_documents(self, query={}):
         '''
         Get list of documents for current user.
 
@@ -116,7 +116,8 @@ class Client():
             - requests.Response: Onshape response data
         '''
 
-        return self._api.request('get', '/api/documents')
+        # return self._api.request('get', '/api/documents')
+        return self._api.request('get', '/api/documents', query)
 
     def create_assembly(self, did, wid, name='My Assembly'):
         '''
