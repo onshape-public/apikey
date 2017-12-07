@@ -120,7 +120,6 @@ class Onshape():
                     '\n' + query + '\n').lower().encode('utf-8')
 
         signature = base64.b64encode(hmac.new(self._secret_key, hmac_str, digestmod=hashlib.sha256).digest())
-        #auth = 'On ' + self._access_key + ':HmacSHA256:' + signature.decode('utf-8')
         auth = 'On ' + self._access_key.decode('utf-8') + ':HmacSHA256:' + signature.decode('utf-8')
 
         if self._logging:

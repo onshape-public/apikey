@@ -15,15 +15,50 @@ for more information about the API see:
 
 apis to play with:
 
+    - try walking a project - get document for a project - get its parts, for each part of assembly get the part number and tags
+        then get instances, subassemblies, parts in each assembly and recurse.
+
     get user companies  https://cad.onshape.com/api/companies?  (no parms)
     get teams   https://cad.onshape.com/api/teams?  (no parms)
+    Document API - get document - can get tags
+    Assembly API - assembly definition - gets "instances" (w/ "id", "name", "type" (e.g. "Assembly"), "suppressed" (true/false),
+                "documentId", "documentMicroversion", "elementId"), "subassemblies" (w/ "documentId", "documentMicroversion",
+                "elementId", "instances" (w/ "id", "name", "partId", "type", "suppressed", "documentId", "documentMicroversion",
+                 "elementId")
+    Elements API - get metadata - gets metadata including part number for an element (e.g. a part of assembly). Includes:
+                "type" (e.g. "ASSEMBLY"), "state" (e.g. "IN_PROGRESS"), "description", "revision", "href", "vendor", "id",
+                "elementId", "partNumber", "project", "name"
+
+    Parts API - get parts
+
+    Play with iFrames!
 
 Len Wanger
 Copyright Impossible Objects, 2017
+
+---
+
+Notes:
+    Element types: fields (name, id, element_type, micro_version_id, and various unit information (for parts and assemblies)
+
+    - Part Studio (zero or more parts) (element_type="PARTSTUDIO")
+    - Assembly (zero or more parts or assemblies) (element_type="ASSEMBLY")
+    - Blob ("Binary Large OBject") This can be data provided by a partner, or by the end user. For example,
+        the user can upload a PDF file, an image or a text file. Partner applications can store arbitrary data,
+        but we recommend using the structured storage available in an Application element for better integration. (element_type="BLOB)
+    - Application. This is an element that presents an IFrame to the user. The user interface in the IFrame is
+        managed by a server that can be provided by a third-party. Note that Onshape Drawings are a special
+        case of an application element. (element_type="APPLCIATION")
+
 """
 
+import sys
 import json
-from urllib.parse import urlparse, parse_qs
+
+if sys.version_info.major == 2:
+    from urlparse import urlparse, parse_qs
+else:
+    from urllib.parse import urlparse, parse_qs
 
 from apikey.ext_client import ClientExtended
 import cooked_input as ci
@@ -151,7 +186,7 @@ def list_elements_action(row, action_dict):
         element_type = item['elementType']
         micro_version_id = item['microversionId']
 
-        print('item {}: name={}, id={}, element_type={}, micro_version_id={}'.format(i, name, item_id, element_type, micro_version_id))
+        print('item {}: name={}, id={}, elementType={}, microversionId={}'.format(i, name, item_id, element_type, micro_version_id))
 
     print('\n')
 
