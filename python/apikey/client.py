@@ -59,6 +59,16 @@ class Client():
 
         return self._api.request('post', '/api/documents', body=payload)
 
+    def get_users_current(self):
+            '''
+            Gets current user:
+
+            Returns:
+                - requests.Response: Onshape response data
+            '''
+
+            return self._api.request('get', '/api/users/current')
+
     def rename_document(self, did, name):
         '''
         Renames the specified document.
