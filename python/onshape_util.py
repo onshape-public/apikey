@@ -67,6 +67,7 @@ IO_COMPANY_ID = '59f3676cac7f7c1075b79b71'
 IO_ENGR_TEAM_ID = '59f396f9ac7f7c1075bf8687'
 TEST_ASSEM_DOC_ID = '0f9c85ccbf253b470b931452'
 MAIN_WORKSPACE = '5c9a0477134719bc5b930595'
+TEST_ASSEM_ELEM_ID = 'fc5140cca987ed4102c2eb3f'
 
 def set_name_filter_action(row, action_dict):
     result = ci.get_string(prompt='Enter string for document name filter: ', required=False)
@@ -92,6 +93,7 @@ def list_documents_action(row, action_dict):
         doc_query['q'] = action_dict['name_filter']
 
     docs = c.list_documents(query=doc_query)
+    #sys.stdout = open('temp.txt', 'w')
 
     while True:
         docs_json = json.loads(docs.text)
@@ -122,6 +124,7 @@ def list_documents_action(row, action_dict):
             docs = c.list_documents(query=doc_query)
 
     print('\n')
+    #sys.stdout = sys.__stdout__
 
 
 def list_teams_action(row, action_dict):
@@ -191,6 +194,56 @@ def list_elements_action(row, action_dict):
     print('\n')
 
 
+def get_bom_action(row, action_dict):
+    print('\n')
+
+    c = action_dict['client']
+    did = action_dict['did']
+    wvm = action_dict['wvm']
+    eid = action_dict['eid']
+    response = c.get_assembly_bom(did, wvm, eid, indented=False, generate_if_absent=True)
+    response_json = json.loads(response.text)
+
+
+    try:
+        status = response_json['status']
+        if status == 404:
+            msg = response_json['message']
+            print("\nStatus 404 returned: {}\n".format(msg))
+            return
+    except:
+        pass
+
+    print(f"\nBOM:\n")
+
+    bom_table = response_json['bomTable']
+    format_ver = bom_table['formatVersion']
+    name = bom_table['name']
+    doc_name = bom_table['bomSource']['document']['name']
+    top_pn = bom_table['bomSource']['element']['partNumber']
+    top_revision = bom_table['bomSource']['element']['revision']
+    print(f"format_version: {format_ver}, name: {name}, doc_name; {doc_name}, pn: {top_pn}{top_revision}")
+
+    print(f"\nheaders:\n")
+    for idx,hdr in enumerate(bom_table['headers']):
+        name = hdr['name']
+        visible = hdr['visible']
+        prop_id = hdr['propertyId']
+        print(f"{idx}: name: {name}, visible: {visible}, prop_id: {prop_id}")
+
+    print(f"\nitems:\n")
+    for idx,item in enumerate(bom_table['items']):
+        item_num = item['item']
+        qty = item['quantity']
+        part_num = item['partNumber']
+        desc = item['description']
+        revision = item['revision']
+        print(f"{idx}: item: {item_num}, qty: {qty}, pn: {part_num}{revision}, desc: {desc}")
+
+
+    print('\n')
+
+
 if __name__ == '__main__':
     stacks = {'cad': 'https://cad.onshape.com'}
     c = ClientExtended(stack=stacks['cad'], logging=False)
@@ -200,6 +253,7 @@ if __name__ == '__main__':
         'company': IO_COMPANY_ID,
         'did': TEST_ASSEM_DOC_ID,
         'wvm': MAIN_WORKSPACE,
+        'eid': TEST_ASSEM_ELEM_ID,
         'name_filter': None,
     }
 
@@ -209,6 +263,7 @@ if __name__ == '__main__':
         ci.TableItem('List Teams', action=list_teams_action),
         ci.TableItem('List Workspaces', action=list_workspaces_action),
         ci.TableItem('List Elements', action=list_elements_action),
+        ci.TableItem('Get BOM', action=get_bom_action),
     ]
     menu = ci.Table(tis, add_exit=ci.TABLE_ADD_EXIT, action_dict=ad)
     menu.run()

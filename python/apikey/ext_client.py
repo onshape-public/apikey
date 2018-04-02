@@ -81,3 +81,32 @@ class ClientExtended(Client):
 
         return self._api.request('get', '/api/documents/d/' + did + '/workspaces', payload)
 
+
+    def get_assembly_bom(self, did, wvm, eid, indented=False, generate_if_absent=True):
+        '''
+        Gets bom assoicated with an assembly
+
+        Args:
+            - did (str): Document ID
+            - wvm (str): Workspace ID or version id or microversion id
+            - eid (str): Element ID
+
+            - indented (bool, optional): if True, returns a multi-level BOM
+            - generate_if_absent (bool, optional): if True, creates a BOM if not already one with the assembly
+
+            bomColumnIDs not implemented yet
+
+        Returns:
+            - requests.Response: Onshape response data
+
+        / assemblies / d / : did / [wvm] / :wvm / e / :eid / bom
+
+
+        '''
+
+        payload = {}
+        payload['indented'] = indented
+        payload['generateIfAbsent'] = generate_if_absent
+
+        route = '/api/assemblies/d/' + did + '/w/' + wvm + '/e/' + eid + '/bom'
+        return self._api.request('get', route, payload)
