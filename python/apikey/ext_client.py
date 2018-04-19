@@ -110,3 +110,23 @@ class ClientExtended(Client):
 
         route = '/api/assemblies/d/' + did + '/w/' + wvm + '/e/' + eid + '/bom'
         return self._api.request('get', route, payload)
+
+
+    def get_parts_list(self, did, wvm):
+        # parts
+        '''
+        Get list  of parts in a document
+        
+        Args:
+            - did (str): Document ID
+            - wvm (str): Workspace ID or version id or microversion id
+
+        Returns:
+            - requests.Response: Onshape response data
+
+        / parts / d / : did / [wvm] / :wvm 
+        '''
+
+        payload = {}
+        route = '/api/parts/d/' + did + '/w/' + wvm
+        return self._api.request('get', route, payload)

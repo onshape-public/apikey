@@ -194,6 +194,33 @@ def list_elements_action(row, action_dict):
     print('\n')
 
 
+def list_parts_action(row, action_dict):
+    print('\n')
+
+    c = action_dict['client']
+    did = action_dict['did']
+    wvm = action_dict['wvm']
+    response = c.get_parts_list(did, wvm)
+    response_json = json.loads(response.text)
+
+    for i, item in enumerate(response_json):
+        name = item['name']
+        desc = item['description']
+        state = item['state']
+        element_id = item['elementId']
+        part_num = item['partNumber']
+        revision = item['revision']
+        microversion_id = item['microversionId']
+        is_hidden = item['isHidden']
+        # is_mesh = item['isMesh']
+        # lots more... appearance, bodyType, etc.
+
+        print('item {}: name={}, desc={}, state={},  elementID={}, partNumber={}, revision={}, microversionId={}, isHidden={}'.format(i,
+                                name, desc, state, element_id, part_num, revision, microversion_id, is_hidden))
+
+    print('\n')
+
+
 def get_bom_action(row, action_dict):
     print('\n')
 
@@ -263,8 +290,10 @@ if __name__ == '__main__':
         ci.TableItem('List Teams', action=list_teams_action),
         ci.TableItem('List Workspaces', action=list_workspaces_action),
         ci.TableItem('List Elements', action=list_elements_action),
+        ci.TableItem('List Parts', action=list_parts_action),
         ci.TableItem('Get BOM', action=get_bom_action),
     ]
-    menu = ci.Table(tis, add_exit=ci.TABLE_ADD_EXIT, action_dict=ad)
+    print()
+    menu = ci.Table(tis, add_exit=ci.TABLE_ADD_EXIT, show_cols=False, action_dict=ad)
     menu.run()
 
