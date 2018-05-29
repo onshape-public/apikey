@@ -37,13 +37,10 @@ application:
 
 ##### Instructions
 
-1. Get the Developer role for your Onshape account by contacting us at
-[api-support@onshape.com](mailto:api-support@onshape.com).
-
-2. Create and manage your API key pairs from the [Developer Portal](https://dev-portal.dev.onshape.com);
+1. Create and manage your API key pairs from the [Developer Portal](https://dev-portal.dev.onshape.com);
 note that the secret will only be displayed once! Keep it somewhere safe.
 
-3. Now that you have a key pair, see [below](#generating-a-request-signature) for
+2. Now that you have a key pair, see [below](#generating-a-request-signature) for
 information on signing your requests to use our API.
 
 Once you have your access key and secret, you will want to avoid giving others access to them since they're tied directly to your personal Onshape account.  Think of your API key as a username and password pair.  Therefore, you should avoid placing them directly in the code for your application, especially if others might see it.  The samples use a separate configuration file that you yourself will need to create that will contain this information, but there are other ways to keep the access key and secret safe, like setting them as environment variables.
