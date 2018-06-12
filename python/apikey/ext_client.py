@@ -82,7 +82,7 @@ class ClientExtended(Client):
         return self._api.request('get', '/api/documents/d/' + did + '/workspaces', payload)
 
 
-    def get_assembly_bom(self, did, wvm, eid, indented=False, generate_if_absent=True):
+    def get_assembly_bom(self, did, wvm, eid, indented=False, multi_level=False, generate_if_absent=True):
         '''
         Gets bom assoicated with an assembly
 
@@ -91,7 +91,8 @@ class ClientExtended(Client):
             - wvm (str): Workspace ID or version id or microversion id
             - eid (str): Element ID
 
-            - indented (bool, optional): if True, returns a multi-level BOM
+            - indented (bool, optional): if True, returns an indented BOM
+            - multi_level (bool, optional): if True, returns a multi-level BOM
             - generate_if_absent (bool, optional): if True, creates a BOM if not already one with the assembly
 
             bomColumnIDs not implemented yet
@@ -107,6 +108,7 @@ class ClientExtended(Client):
         payload = {}
         payload['indented'] = indented
         payload['generateIfAbsent'] = generate_if_absent
+        payload['multiLevel'] = multi_level
 
         route = '/api/assemblies/d/' + did + '/w/' + wvm + '/e/' + eid + '/bom'
         return self._api.request('get', route, payload)
@@ -116,7 +118,7 @@ class ClientExtended(Client):
         # parts
         '''
         Get list  of parts in a document
-        
+
         Args:
             - did (str): Document ID
             - wvm (str): Workspace ID or version id or microversion id
@@ -124,7 +126,7 @@ class ClientExtended(Client):
         Returns:
             - requests.Response: Onshape response data
 
-        / parts / d / : did / [wvm] / :wvm 
+        / parts / d / : did / [wvm] / :wvm
         '''
 
         payload = {}

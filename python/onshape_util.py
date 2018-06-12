@@ -95,6 +95,8 @@ def list_documents_action(row, action_dict):
     docs = c.list_documents(query=doc_query)
     #sys.stdout = open('temp.txt', 'w')
 
+    rows = []
+
     while True:
         docs_json = json.loads(docs.text)
 
@@ -114,7 +116,9 @@ def list_documents_action(row, action_dict):
             tags = item['tags']
             description = item['description']
             href = item['href']
-            print('item {}: name={}, id={}, tags={}, description={}, href={}'.format(i+cur_offset, name, item_id, tags, description, href))
+            #print('item {}: name={}, id={}, tags={}, description={}, href={}'.format(i+cur_offset, name, item_id, tags, description, href))
+            ti = ci.TableItem([name, item_id, str(tags), description, href])
+            rows.append(ti)
 
         if next_page is None:
             break
@@ -123,6 +127,8 @@ def list_documents_action(row, action_dict):
             doc_query['offset'] = cur_offset + int(qd['offset'][0])
             docs = c.list_documents(query=doc_query)
 
+    col_names = "Name Id Tags Description HREF".split()
+    ci.Table(rows, col_names=col_names, title='OnShape Documents', tag_str='#').show_table()
     print('\n')
     #sys.stdout = sys.__stdout__
 
@@ -131,6 +137,7 @@ def list_teams_action(row, action_dict):
     c = action_dict['client']
     response = c.list_teams()
 
+    rows = []
     while True:
         response_json = json.loads(response.text)
         next_page = response_json['next']
@@ -141,14 +148,16 @@ def list_teams_action(row, action_dict):
             item_id = item['id']
             description = item['description']
             href = item['href']
-            print('item {}: name={}, id={}, description={}, href={}'.format(i + cur_offset, name, item_id, description, href))
-
+            # print('item {}: name={}, id={}, description={}, href={}'.format(i + cur_offset, name, item_id, description, href))
+            rows.append(ci.TableItem([name, item_id, description, href]))
         if next_page is None:
             break
         else:
             response = c.get_next_page(next_page)
             cur_offset += 20
 
+    col_names = "Name Id Description HREF".split()
+    ci.Table(rows, col_names=col_names, title='OnShape Teams', tag_str='#').show_table()
     print('\n')
 
 
@@ -160,7 +169,7 @@ def list_workspaces_action(row, action_dict):
     response = c.get_workspaces(did)
     response_json = json.loads(response.text)
 
-    # for i, item in enumerate(response_json['items']):
+    rows = []
     for i, item in enumerate(response_json):
         read_only = item['isReadOnly']
         modified_at = item['modifiedAt']
@@ -169,8 +178,13 @@ def list_workspaces_action(row, action_dict):
         document_id = item['documentId']
         description = item['description']
         href = item['href']
-        print('item {}: name={}, document_id={}, id={}, description={}, read_only={}, modified_at={}, href={}'.format(i, name, document_id, item_id, description, read_only, modified_at, href))
+        #print('item {}: name={}, document_id={}, id={}, description={}, read_only={}, modified_at={}, href={}'.format(i, name, document_id, item_id, description, read_only, modified_at, href))
+        #rows.append(ci.TableItem([name, document_id, item_id, description, read_only, modified_at, href]))
+        rows.append(ci.TableItem([name, item_id, read_only, modified_at, href[:50]]))
 
+    #col_names = "Name DocId ItemId Description ReadOnly Modified HREF".split()
+    col_names = "Name ItemId ReadOnly Modified HREF".split()
+    ci.Table(rows, col_names=col_names, title='OnShape Workspaces', tag_str='#').show_table()
     print('\n')
 
 
@@ -183,14 +197,18 @@ def list_elements_action(row, action_dict):
     response = c.get_element_list(did, wvm, element_type=None, eid=None, with_thumbnails=False)
     response_json = json.loads(response.text)
 
+    rows = []
     for i, item in enumerate(response_json):
         name = item['name']
         item_id = item['id']
         element_type = item['elementType']
         micro_version_id = item['microversionId']
 
-        print('item {}: name={}, id={}, elementType={}, microversionId={}'.format(i, name, item_id, element_type, micro_version_id))
+        # print('item {}: name={}, id={}, elementType={}, microversionId={}'.format(i, name, item_id, element_type, micro_version_id))
+        rows.append(ci.TableItem([name, item_id, element_type, micro_version_id]))
 
+    col_names = "Name Id ElementType MicroversionId".split()
+    ci.Table(rows, col_names=col_names, title='OnShape Elements', tag_str='#').show_table()
     print('\n')
 
 
@@ -203,6 +221,7 @@ def list_parts_action(row, action_dict):
     response = c.get_parts_list(did, wvm)
     response_json = json.loads(response.text)
 
+    rows = []
     for i, item in enumerate(response_json):
         name = item['name']
         desc = item['description']
@@ -215,9 +234,12 @@ def list_parts_action(row, action_dict):
         # is_mesh = item['isMesh']
         # lots more... appearance, bodyType, etc.
 
-        print('item {}: name={}, desc={}, state={},  elementID={}, partNumber={}, revision={}, microversionId={}, isHidden={}'.format(i,
-                                name, desc, state, element_id, part_num, revision, microversion_id, is_hidden))
+        # print('item {}: name={}, desc={}, state={},  elementID={}, partNumber={}, revision={}, microversionId={}, isHidden={}'.format(i,
+        #         name, desc, state, element_id, part_num, revision, microversion_id, is_hidden))
+        rows.append(ci.TableItem([name, desc, state, element_id, part_num, revision, microversion_id, is_hidden]))
 
+    col_names = "Name Description State Id PartNum Revision, MicroversionId isHidden".split()
+    ci.Table(rows, col_names=col_names, title='OnShape Parts', tag_str='#').show_table()
     print('\n')
 
 
@@ -228,7 +250,15 @@ def get_bom_action(row, action_dict):
     did = action_dict['did']
     wvm = action_dict['wvm']
     eid = action_dict['eid']
-    response = c.get_assembly_bom(did, wvm, eid, indented=False, generate_if_absent=True)
+
+    types = ["flattened", "top-level", "multi-level"]
+    type_vals = {"flattened": (False, False), "top-level": (True, False), "multi-level": (True, True)}
+    prompt_str = f'BOM type ({", ".join(types)})'
+    type_cleaner = ci.ChoiceCleaner(types)
+    use_type = ci.get_string(prompt=prompt_str, cleaners=type_cleaner, default="flattened")
+    indented, multi_level = type_vals[use_type]
+
+    response = c.get_assembly_bom(did, wvm, eid, indented=indented, multi_level=multi_level, generate_if_absent=True)
     response_json = json.loads(response.text)
 
 
@@ -241,33 +271,29 @@ def get_bom_action(row, action_dict):
     except:
         pass
 
-    print(f"\nBOM:\n")
-
     bom_table = response_json['bomTable']
     format_ver = bom_table['formatVersion']
     name = bom_table['name']
+    bom_type = bom_table['type']
+    created_at = bom_table['createdAt']
     doc_name = bom_table['bomSource']['document']['name']
     top_pn = bom_table['bomSource']['element']['partNumber']
     top_revision = bom_table['bomSource']['element']['revision']
-    print(f"format_version: {format_ver}, name: {name}, doc_name; {doc_name}, pn: {top_pn}{top_revision}")
+    state = bom_table['bomSource']['element']['state']
+    title = (f"\n\n{bom_type} {name} (format version {format_ver}) - {doc_name} ({state} {top_pn}{top_revision}) created_at: {created_at}")
 
-    print(f"\nheaders:\n")
-    for idx,hdr in enumerate(bom_table['headers']):
-        name = hdr['name']
-        visible = hdr['visible']
-        prop_id = hdr['propertyId']
-        print(f"{idx}: name: {name}, visible: {visible}, prop_id: {prop_id}")
-
-    print(f"\nitems:\n")
+    rows = []
     for idx,item in enumerate(bom_table['items']):
         item_num = item['item']
         qty = item['quantity']
         part_num = item['partNumber']
         desc = item['description']
         revision = item['revision']
-        print(f"{idx}: item: {item_num}, qty: {qty}, pn: {part_num}{revision}, desc: {desc}")
+        state = item['state']
+        rows.append(ci.TableItem([qty, part_num, revision, state, desc], tag=item_num))
 
-
+    col_names = "Qty PartNum Rev State Desc".split()
+    ci.Table(rows, col_names=col_names, title=title, tag_str='ItemNums').show_table()
     print('\n')
 
 

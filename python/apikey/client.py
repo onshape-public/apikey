@@ -7,7 +7,7 @@ Convenience functions for working with the Onshape API
 
 import sys
 
-if sys.version_info.major == 2:
+if sys.version_info.major < 3:
     from onshape import Onshape
 else:
     from .onshape import Onshape
