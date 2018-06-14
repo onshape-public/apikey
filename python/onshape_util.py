@@ -171,7 +171,8 @@ def list_teams_action(row, action_dict):
     response = c.list_teams()
 
     rows = []
-    for response_json in c.pager(response):
+
+    for response_json in Pager(c, response):
         for item in response_json['items']:
             name = item['name']
             item_id = item['id']

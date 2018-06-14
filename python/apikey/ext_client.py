@@ -54,8 +54,8 @@ class Pager():
 
 
 class ClientExtended(Client):
-    def __init__(self, stack='https://cad.onshape.com', logging=True):
-        super(ClientExtended, self).__init__(stack, logging)
+    def __init__(self, stack='https://cad.onshape.com', creds='./creds.json', logging=True):
+        super(ClientExtended, self).__init__(stack, creds, logging)
 
     # def get_next_page(self, next_page_url):
     def get_next_page(self, next_page_url, offset=None, limit=20):
