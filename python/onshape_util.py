@@ -13,7 +13,11 @@ for more information about the API see:
 
         https://github.com/onshape-public/apikey/tree/master/python
 
-apis to play with:
+
+TODO:
+    - Clean up - remove the name filter
+    - Add cooked_input commands (for scrolling)
+    - More apis to play with:
 
     - try walking a project - get document for a project - get its parts, for each part of assembly get the part number and tags
         then get instances, subassemblies, parts in each assembly and recurse.
@@ -70,9 +74,41 @@ MAIN_WORKSPACE = '5c9a0477134719bc5b930595'
 TEST_ASSEM_ELEM_ID = 'fc5140cca987ed4102c2eb3f'
 
 
-def set_name_filter_action(row, action_dict):
-    result = ci.get_string(prompt='Enter string for document name filter: ', required=False)
-    action_dict['name_filter'] = result
+def help_cmd_action(cmd_str, cmd_vars, cmd_dict):
+    print('\nCommands:\n')
+    print('/?, /h\tDisplay this help message')
+    print('/cancel\tCancel the current operation')
+    print('/first (/f)\tGo to first page of the table')
+    print('/last (/l)\tGo to last page of the table')
+    print('/prev (/p)\tGo to previous page of the table')
+    print('/next (/n)\tGo to next page of the table')
+    print()
+
+    return (ci.COMMAND_ACTION_NOP, None)
+
+
+def cancel_cmd_action(cmd_str, cmd_vars, cmd_dict):
+    print('\nCommand cancelled...')
+    return (ci.COMMAND_ACTION_CANCEL, None)
+
+
+std_commands = {
+    '/?': ci.GetInputCommand(help_cmd_action),
+    '/h': ci.GetInputCommand(help_cmd_action),
+    '/help': ci.GetInputCommand(help_cmd_action),
+    '/cancel': ci.GetInputCommand(cancel_cmd_action),
+}
+
+table_commands = {
+    '/?': ci.GetInputCommand(help_cmd_action),
+    '/h': ci.GetInputCommand(help_cmd_action),
+    '/help': ci.GetInputCommand(help_cmd_action),
+    '/cancel': ci.GetInputCommand(cancel_cmd_action),
+    '/first': ci.GetInputCommand(ci.first_page_cmd_action),
+    '/last': ci.GetInputCommand(ci.last_page_cmd_action),
+    '/prev': ci.GetInputCommand(ci.prev_page_cmd_action),
+    '/next': ci.GetInputCommand(ci.next_page_cmd_action),
+}
 
 
 class DocRow():
@@ -119,25 +155,32 @@ def list_documents_action(row, action_dict):
     # owner - owner id for filter 6 or 7, team if 9
     # offset - offset into the page (max 20)
     # limit - number of documents returned per page
-
     c = action_dict['client']
-    #filter_val, owner = (9, action_dict['team'])   # filter by team
-    filter_val, owner =  (7, action_dict['company'])    # filter by company
+    doc_query = {'offset': 0, 'limit': 20}
 
-    # doc_query = {'q': 'exercise', 'filter': 0, 'offset': 0}
-    # doc_query = {'filter': filter_val, 'owner': owner, 'offset': 0, 'limit': 20}
-    doc_query = {'filter': filter_val, 'owner': owner}
+    name_filter = ci.get_string(prompt='String to filter document names (hit enter for no filter)', required=False, commands=std_commands)
+    if name_filter is not None and len(name_filter) > 0:
+        doc_query['q'] = name_filter
 
-    if action_dict['name_filter'] is not None and len(action_dict['name_filter']) > 0:
-        doc_query['q'] = action_dict['name_filter']
+    if ci.get_yes_no(prompt='Show only your documents', default='no', commands=std_commands) == 'yes':
+        filter_val, owner = (0, None)  # filter by company
+        doc_query = {'filter': 0}
+    elif ci.get_yes_no(prompt='Show documents for your company', default='no', commands=std_commands) == 'yes':
+        doc_query = {'filter': 7, 'owner': action_dict['company']}  # filter by company
+    # elif ...:
+        # TODO - implement other filters - team, owner, etc.
+        #filter_val, owner = (9, action_dict['team'])   # filter by team
+        #doc_query = {'filter': 9, 'owner': action_dict['team']}  # filter by team
+
+    else:
+        if ci.get_yes_no(prompt="Are you sure you want to fetch with no filters... this could take a long time!", default='no')=='no':
+            print('Cancelling action')
+            raise ci.COMMAND_ACTION_CANCEL
 
     docs = c.list_documents(query=doc_query)
-    #sys.stdout = open('temp.txt', 'w')
-
     tbl = create_docs_table(c, docs)
-    tbl.show_table()
+    tbl.get_table_choice(required=False, commands=table_commands)
     print('\n')
-    #sys.stdout = sys.__stdout__
 
 
 def get_document_action(row, action_dict):
@@ -148,7 +191,7 @@ def get_document_action(row, action_dict):
     # offset - offset into the page (max 20)
     # limit - number of documents returned per page
 
-    fname_filter_str = ci.get_string(prompt='Document string to search for')
+    fname_filter_str = ci.get_string(prompt='Document string to search for', commands=std_commands)
 
     c = action_dict['client']
     filter_val, owner =  (7, action_dict['company'])    # filter by company
@@ -160,7 +203,7 @@ def get_document_action(row, action_dict):
     if tbl.get_num_rows() == 1: # TODO - this doesn't work!
         choice = tbl.get_row(tag='1')
     else:
-        choice = tbl.get_table_choice(prompt='choose a document')
+        choice = tbl.get_table_choice(prompt='choose a document', commands=table_commands)
     doc = choice.item_data['row']
     print(f'chose doc {doc.name} ({doc.did})')
     print('\n')
@@ -199,14 +242,9 @@ def list_workspaces_action(row, action_dict):
         modified_at = item['modifiedAt']
         name = item['name']
         item_id = item['id']
-        # document_id = item['documentId']
-        # description = item['description']
         href = item['href']
-        #print('item {}: name={}, document_id={}, id={}, description={}, read_only={}, modified_at={}, href={}'.format(i, name, document_id, item_id, description, read_only, modified_at, href))
-        #rows.append(ci.TableItem([name, document_id, item_id, description, read_only, modified_at, href]))
         rows.append(ci.TableItem([name, item_id, read_only, modified_at, href[:50]]))
 
-    #col_names = "Name DocId ItemId Description ReadOnly Modified HREF".split()
     col_names = "Name ItemId ReadOnly Modified HREF".split()
     ci.Table(rows, col_names=col_names, title='OnShape Workspaces', tag_str='#').show_table()
     print('\n')
@@ -227,8 +265,6 @@ def list_elements_action(row, action_dict):
         item_id = item['id']
         element_type = item['elementType']
         micro_version_id = item['microversionId']
-
-        # print('item {}: name={}, id={}, elementType={}, microversionId={}'.format(i, name, item_id, element_type, micro_version_id))
         rows.append(ci.TableItem([name, item_id, element_type, micro_version_id]))
 
     col_names = "Name Id ElementType MicroversionId".split()
@@ -279,7 +315,7 @@ def get_bom_action(row, action_dict):
     type_vals = {"flattened": (False, False), "top-level": (True, False), "multi-level": (True, True)}
     prompt_str = f'BOM type ({", ".join(types)})'
     type_cleaner = ci.ChoiceCleaner(types)
-    use_type = ci.get_string(prompt=prompt_str, cleaners=type_cleaner, default="flattened")
+    use_type = ci.get_string(prompt=prompt_str, cleaners=type_cleaner, default="flattened", commands=std_commands)
     indented, multi_level = type_vals[use_type]
 
     response = c.get_assembly_bom(did, wvm, eid, indented=indented, multi_level=multi_level, generate_if_absent=True)
@@ -335,7 +371,7 @@ if __name__ == '__main__':
     }
 
     tis = [
-        ci.TableItem('Set document name filter string', action=set_name_filter_action),
+        # ci.TableItem('Set document name filter string', action=set_name_filter_action),
         ci.TableItem('List Documents', action=list_documents_action),
         ci.TableItem('Get did for a document', action=get_document_action),
         ci.TableItem('List Teams', action=list_teams_action),
