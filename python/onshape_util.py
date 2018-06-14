@@ -60,7 +60,7 @@ if sys.version_info.major == 2:
 else:
     from urllib.parse import urlparse, parse_qs
 
-from apikey.ext_client import ClientExtended
+from apikey.ext_client import ClientExtended, Pager
 import cooked_input as ci
 
 IO_COMPANY_ID = '59f3676cac7f7c1075b79b71'
@@ -69,9 +69,48 @@ TEST_ASSEM_DOC_ID = '0f9c85ccbf253b470b931452'
 MAIN_WORKSPACE = '5c9a0477134719bc5b930595'
 TEST_ASSEM_ELEM_ID = 'fc5140cca987ed4102c2eb3f'
 
+
 def set_name_filter_action(row, action_dict):
     result = ci.get_string(prompt='Enter string for document name filter: ', required=False)
     action_dict['name_filter'] = result
+
+
+class DocRow():
+    # class to represent an OnShape document
+    def __init__(self, doc_json):
+        self.did = doc_json['id']
+        self.href = doc_json['href']
+        self.name = doc_json['name']
+        self.owner_id = doc_json['owner']['id']
+        self.owner = doc_json['owner']
+        self.default_workspace_id = doc_json['defaultWorkspace']['id']
+        self.default_workspace = doc_json['defaultWorkspace']['name']
+        self.created_at = doc_json['createdAt']
+        self.created_by_id = doc_json['createdBy']['id']
+        self.created_by = doc_json['createdBy']['name']
+        self.modified_at = doc_json['modifiedAt']
+        self.modified_by_id = doc_json['modifiedBy']['id']
+        self.modified_by = doc_json['modifiedBy']['name']
+
+    def __repr__(self):
+        return f'{self.name} ({self.did})'
+
+
+def create_docs_table(c, docs):
+    rows = []
+    print('fetching documents ', end='', flush=True)
+    for page in Pager(c, docs):
+        print('.', end='', flush=True)
+        for item in page['items']:
+            rows.append(DocRow(item))
+
+    print('\n\n')
+    fields = ["Name", "did", "CreatedAt", "Default Workspace", "ModifiedAt"]
+    tis = [ci.TableItem([row.name, row.did, row.created_at, row.default_workspace, row.modified_at], tag=None, item_data={'row': row}) for row in rows]
+    tbl = ci.Table(tis, fields, default_action=ci.TABLE_RETURN_TABLE_ITEM, add_exit=False,
+                   show_cols=True, show_border=True, hrules=ci.RULE_FRAME, vrules=ci.RULE_ALL)
+    return tbl
+
 
 def list_documents_action(row, action_dict):
     # Uses Documents API/Get Documents
@@ -95,42 +134,36 @@ def list_documents_action(row, action_dict):
     docs = c.list_documents(query=doc_query)
     #sys.stdout = open('temp.txt', 'w')
 
-    rows = []
-
-    while True:
-        docs_json = json.loads(docs.text)
-
-        try:
-            cur_offset = int(parse_qs(urlparse(docs.url)[4])['offset'][0])
-        except KeyError:
-            cur_offset = 0
-
-        try:
-            next_page = docs_json['next']
-        except KeyError:
-            next_page = None
-
-        for i, item in enumerate(docs_json['items']):
-            name = item['name']
-            item_id = item['id']
-            tags = item['tags']
-            description = item['description']
-            href = item['href']
-            #print('item {}: name={}, id={}, tags={}, description={}, href={}'.format(i+cur_offset, name, item_id, tags, description, href))
-            ti = ci.TableItem([name, item_id, str(tags), description, href])
-            rows.append(ti)
-
-        if next_page is None:
-            break
-        else:
-            qd = parse_qs(urlparse(next_page)[4])
-            doc_query['offset'] = cur_offset + int(qd['offset'][0])
-            docs = c.list_documents(query=doc_query)
-
-    col_names = "Name Id Tags Description HREF".split()
-    ci.Table(rows, col_names=col_names, title='OnShape Documents', tag_str='#').show_table()
+    tbl = create_docs_table(c, docs)
+    tbl.show_table()
     print('\n')
     #sys.stdout = sys.__stdout__
+
+
+def get_document_action(row, action_dict):
+    # Uses Documents API/Get Documents
+    # parms - q - search for string in name of document
+    # filter - 0-9 for filter, 0 - my docs, 6- by owner, 7 by company, 9 by team
+    # owner - owner id for filter 6 or 7, team if 9
+    # offset - offset into the page (max 20)
+    # limit - number of documents returned per page
+
+    fname_filter_str = ci.get_string(prompt='Document string to search for')
+
+    c = action_dict['client']
+    filter_val, owner =  (7, action_dict['company'])    # filter by company
+    doc_query = {'filter': filter_val, 'owner': owner}
+    doc_query['q'] = fname_filter_str
+    docs = c.list_documents(query=doc_query)
+    tbl = create_docs_table(c, docs)
+
+    if tbl.get_num_rows() == 1: # TODO - this doesn't work!
+        choice = tbl.get_row(tag='1')
+    else:
+        choice = tbl.get_table_choice(prompt='choose a document')
+    doc = choice.item_data['row']
+    print(f'chose doc {doc.name} ({doc.did})')
+    print('\n')
 
 
 def list_teams_action(row, action_dict):
@@ -138,23 +171,13 @@ def list_teams_action(row, action_dict):
     response = c.list_teams()
 
     rows = []
-    while True:
-        response_json = json.loads(response.text)
-        next_page = response_json['next']
-        cur_offset = 0
-
-        for i, item in enumerate(response_json['items']):
+    for response_json in c.pager(response):
+        for item in response_json['items']:
             name = item['name']
             item_id = item['id']
             description = item['description']
             href = item['href']
-            # print('item {}: name={}, id={}, description={}, href={}'.format(i + cur_offset, name, item_id, description, href))
             rows.append(ci.TableItem([name, item_id, description, href]))
-        if next_page is None:
-            break
-        else:
-            response = c.get_next_page(next_page)
-            cur_offset += 20
 
     col_names = "Name Id Description HREF".split()
     ci.Table(rows, col_names=col_names, title='OnShape Teams', tag_str='#').show_table()
@@ -175,8 +198,8 @@ def list_workspaces_action(row, action_dict):
         modified_at = item['modifiedAt']
         name = item['name']
         item_id = item['id']
-        document_id = item['documentId']
-        description = item['description']
+        # document_id = item['documentId']
+        # description = item['description']
         href = item['href']
         #print('item {}: name={}, document_id={}, id={}, description={}, read_only={}, modified_at={}, href={}'.format(i, name, document_id, item_id, description, read_only, modified_at, href))
         #rows.append(ci.TableItem([name, document_id, item_id, description, read_only, modified_at, href]))
@@ -313,6 +336,7 @@ if __name__ == '__main__':
     tis = [
         ci.TableItem('Set document name filter string', action=set_name_filter_action),
         ci.TableItem('List Documents', action=list_documents_action),
+        ci.TableItem('Get did for a document', action=get_document_action),
         ci.TableItem('List Teams', action=list_teams_action),
         ci.TableItem('List Workspaces', action=list_workspaces_action),
         ci.TableItem('List Elements', action=list_elements_action),

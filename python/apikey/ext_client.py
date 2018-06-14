@@ -3,13 +3,62 @@
 Extended onshape api client
 """
 
+import json
+from urllib.parse import urlparse, parse_qs
+
 from .client import Client
+
+
+class Pager():
+    """
+    Iterator to return pages of data for OnShape calls that use a paging mechanism with next/prev page (Teams,
+    Companies, GetDocuments, etc.).  This allow you to call the function like this:
+
+    team_names = []
+    first_response = c.list_teams()
+    for response_json in onshape_pager(first_response):
+        team_names += [item['name'] for item in response_json['items']]
+
+    :param first_response: The response from running the query the first time (first page of results)
+    :return: a json version of the result data for the next page of response data
+    """
+    def __init__(self, c, first_response, offset=0, limit=20):
+        self.client = c
+        self. first_response = True
+        self.response = first_response
+        self.cur_offset = offset
+        self.limit = limit
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        response_json = json.loads(self.response.text)
+
+        if self.first_response is True:
+            self.first_response = False
+            return response_json
+
+        next_page = response_json['next']
+
+        if next_page is None:   # Note: never hitting here... limit offsets back to 20
+            raise StopIteration
+
+        self.cur_offset += 20
+        # response = self.client.get_next_page(next_page)
+        self.response = self.client.get_next_page(next_page, offset=self.cur_offset, limit=self.limit)
+        return json.loads(self.response.content)
+
+    def get_offset(self):
+        return self.cur_offset
+
 
 class ClientExtended(Client):
     def __init__(self, stack='https://cad.onshape.com', logging=True):
         super(ClientExtended, self).__init__(stack, logging)
 
-    def get_next_page(self, next_page_url):
+    # def get_next_page(self, next_page_url):
+    def get_next_page(self, next_page_url, offset=None, limit=20):
         '''
         Get next page of results for a query. Some api calls (such as get teams) give a 'next' URL.
 
@@ -17,7 +66,19 @@ class ClientExtended(Client):
             - requests.Response: Onshape response data
         '''
 
-        return self._api.request('get', next_page_url)
+        parsed_url = urlparse(next_page_url)
+        path = parsed_url.path
+        query = parse_qs(parsed_url.query)
+        use_query = {k: v[0] for k,v in query.items()}
+
+        if offset is not None:
+            use_query['offset'] = offset
+
+        if limit is not None:
+            use_query['limit'] = limit
+
+        return self._api.request('get', path, use_query)
+
 
     def list_teams(self):
         '''
