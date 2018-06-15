@@ -6,11 +6,12 @@ except ImportError:
     from distutils.core import setup
 
 config = {
-    'name': 'apikey',
-    'version': '1.0.0',
+    #'name': 'apikey',
+    'name': 'onshapepy',
+    'version': '0.0.1',
     'description': 'Sample package to demonstrate using Onshape API keys',
     'long_description': open('README.md').read(),
-    'author': 'Ty-Lucas Kelley',
+    'author': 'Len Wanger',
     'url': 'https://github.com/onshape/apikey/tree/master/python',
     'license': open('LICENSE').read(),
     'packages': [
