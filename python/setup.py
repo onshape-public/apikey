@@ -12,7 +12,7 @@ config = {
     'description': 'Sample package to demonstrate using Onshape API keys',
     'long_description': open('README.md').read(),
     'author': 'Len Wanger',
-    'url': 'https://github.com/onshape/apikey/tree/master/python',
+    'url': 'https://github.com/lwanger/onshapepy',
     'license': open('LICENSE').read(),
     'packages': [
         'apikey'
