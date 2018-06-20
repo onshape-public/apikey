@@ -15,8 +15,6 @@ for more information about the API see:
 
 
 TODO:
-    - Clean up - remove the name filter
-    - Add cooked_input commands (for scrolling)
     - More apis to play with:
 
     - try walking a project - get document for a project - get its parts, for each part of assembly get the part number and tags
@@ -64,14 +62,17 @@ if sys.version_info.major == 2:
 else:
     from urllib.parse import urlparse, parse_qs
 
-from apikey.ext_client import ClientExtended, Pager
+from onshapepy.ext_client import ClientExtended, Pager
 import cooked_input as ci
 
 IO_COMPANY_ID = '59f3676cac7f7c1075b79b71'
 IO_ENGR_TEAM_ID = '59f396f9ac7f7c1075bf8687'
-TEST_ASSEM_DOC_ID = '0f9c85ccbf253b470b931452'
-MAIN_WORKSPACE = '5c9a0477134719bc5b930595'
-TEST_ASSEM_ELEM_ID = 'fc5140cca987ed4102c2eb3f'
+# TEST_ASSEM_DOC_ID = '0f9c85ccbf253b470b931452'
+TEST_ASSEM_DOC_ID = '038582dd6fb5b4e103ae2f91'  # IO0571
+# MAIN_WORKSPACE = '5c9a0477134719bc5b930595'
+MAIN_WORKSPACE = 'f1c5a07b9a53222043d46954'
+# TEST_ASSEM_ELEM_ID = 'fc5140cca987ed4102c2eb3f'
+TEST_ASSEM_ELEM_ID = '3bc610eb24f2b6686d2f99d5' # IO0571 assembly
 
 
 def help_cmd_action(cmd_str, cmd_vars, cmd_dict):
@@ -133,6 +134,14 @@ class DocRow():
 
 
 def create_docs_table(c, docs):
+    """
+    Create a table containing documents from OnShape. c is the onShape client and docs
+    :param c: an onshapepy client
+    :param docs: a json list of documents from onshapepy
+
+    :return: a cooked_input Table containing a list of documents
+    """
+    style = ci.TableStyle(show_cols=True, show_border=True, hrules=ci.RULE_FRAME, vrules=ci.RULE_ALL)
     rows = []
     print('fetching documents ', end='', flush=True)
     for page in Pager(c, docs):
@@ -143,8 +152,39 @@ def create_docs_table(c, docs):
     print('\n\n')
     fields = ["Name", "did", "CreatedAt", "Default Workspace", "ModifiedAt"]
     tis = [ci.TableItem([row.name, row.did, row.created_at, row.default_workspace, row.modified_at], tag=None, item_data={'row': row}) for row in rows]
-    tbl = ci.Table(tis, fields, default_action=ci.TABLE_RETURN_TABLE_ITEM, add_exit=False,
-                   show_cols=True, show_border=True, hrules=ci.RULE_FRAME, vrules=ci.RULE_ALL)
+    tbl = ci.Table(tis, fields, default_action=ci.TABLE_RETURN_TABLE_ITEM, add_exit=False, style=style)
+    return tbl
+
+
+def create_eids_table(c, eids, assemblies_only=True):
+    """
+    Create a table containing elements for an  OnShape document
+
+    :param c: an onshapepy client
+    :param eids: a json list of document elements from onshapepy
+    :param assemblies_only: if true only shows assembly elements
+
+    tables are ignoring: type, lengthUnits, angleUnits, massUnits, foreignDataId
+
+    :return: a cooked_input Table containing a list of elements
+    """
+    style = ci.TableStyle(show_cols=True, show_border=True, hrules=ci.RULE_FRAME, vrules=ci.RULE_ALL)
+    tis = []
+
+    for item in eids:
+        element_type = item['elementType']
+
+        if assemblies_only and element_type != "ASSEMBLY":
+            continue
+
+        name = item['name']
+        item_id = item['id']
+        micro_version_id = item['microversionId']
+        tis.append(ci.TableItem([name, item_id, element_type, micro_version_id], tag=None, item_data={'item': item}))
+
+    fields = "Name Id ElementType MicroversionId".split()
+    tbl = ci.Table(tis, fields, default_action=ci.TABLE_RETURN_TABLE_ITEM, add_exit=False, tag_str='#', style=style)
+    print('\n')
     return tbl
 
 
@@ -183,7 +223,7 @@ def list_documents_action(row, action_dict):
     print('\n')
 
 
-def get_document_action(row, action_dict):
+def get_document(client, company_id):
     # Uses Documents API/Get Documents
     # parms - q - search for string in name of document
     # filter - 0-9 for filter, 0 - my docs, 6- by owner, 7 by company, 9 by team
@@ -193,20 +233,47 @@ def get_document_action(row, action_dict):
 
     fname_filter_str = ci.get_string(prompt='Document string to search for', commands=std_commands)
 
-    c = action_dict['client']
-    filter_val, owner =  (7, action_dict['company'])    # filter by company
+    filter_val, owner = (7, company_id)  # filter by company
     doc_query = {'filter': filter_val, 'owner': owner}
     doc_query['q'] = fname_filter_str
     docs = c.list_documents(query=doc_query)
     tbl = create_docs_table(c, docs)
 
-    if tbl.get_num_rows() == 1: # TODO - this doesn't work!
+    if tbl.get_num_rows() == 1:  # TODO - this doesn't work!
         choice = tbl.get_row(tag='1')
     else:
         choice = tbl.get_table_choice(prompt='choose a document', commands=table_commands)
     doc = choice.item_data['row']
+    return doc
+
+
+def get_document_action(row, action_dict):
+    # get a document from OnShape
+    doc = get_document(action_dict['client'], action_dict['company'])
     print(f'chose doc {doc.name} ({doc.did})')
     print('\n')
+
+
+def get_eid_action(row, action_dict):
+    # Get the element id to work with
+    client = action_dict['client']
+
+    doc = get_document(client, action_dict['company'])
+    did = doc.did
+    wvm = doc.default_workspace_id
+
+    response = c.get_element_list(did, wvm, element_type=None, eid=None, with_thumbnails=False)
+    response_json = json.loads(response.text)
+    tbl = create_eids_table(client, response_json)
+
+    if tbl.get_num_rows() == 1:  # TODO - this doesn't work!
+        choice = tbl.get_row(tag='1')
+    else:
+        choice = tbl.get_table_choice(prompt='choose a document', commands=table_commands)
+
+    eid = choice.item_data['item']['id']
+    print(f'Chose eid={eid}\n\n')
+    return eid
 
 
 def list_teams_action(row, action_dict):
@@ -258,17 +325,8 @@ def list_elements_action(row, action_dict):
     wvm = action_dict['wvm']
     response = c.get_element_list(did, wvm, element_type=None, eid=None, with_thumbnails=False)
     response_json = json.loads(response.text)
-
-    rows = []
-    for i, item in enumerate(response_json):
-        name = item['name']
-        item_id = item['id']
-        element_type = item['elementType']
-        micro_version_id = item['microversionId']
-        rows.append(ci.TableItem([name, item_id, element_type, micro_version_id]))
-
-    col_names = "Name Id ElementType MicroversionId".split()
-    ci.Table(rows, col_names=col_names, title='OnShape Elements', tag_str='#').show_table()
+    tbl = create_eids_table(c, response_json, assemblies_only=False)
+    tbl.show_table()
     print('\n')
 
 
@@ -370,10 +428,13 @@ if __name__ == '__main__':
         'name_filter': None,
     }
 
+    style = ci.TableStyle(show_cols=False, show_border=False)
+
     tis = [
         # ci.TableItem('Set document name filter string', action=set_name_filter_action),
         ci.TableItem('List Documents', action=list_documents_action),
         ci.TableItem('Get did for a document', action=get_document_action),
+        ci.TableItem('Get eid for a document', action=get_eid_action),
         ci.TableItem('List Teams', action=list_teams_action),
         ci.TableItem('List Workspaces', action=list_workspaces_action),
         ci.TableItem('List Elements', action=list_elements_action),
@@ -381,6 +442,6 @@ if __name__ == '__main__':
         ci.TableItem('Get BOM', action=get_bom_action),
     ]
     print()
-    menu = ci.Table(tis, add_exit=ci.TABLE_ADD_EXIT, show_cols=False, action_dict=ad)
+    menu = ci.Table(tis, add_exit=ci.TABLE_ADD_EXIT, style=style, action_dict=ad)
     menu.run()
 

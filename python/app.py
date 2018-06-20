@@ -7,7 +7,8 @@ app
 Demos basic usage of the Onshape API
 '''
 
-from apikey.client import Client
+#from apikey.client import Client
+from onshapepy.client import Client
 
 # stacks to choose from
 stacks = {
