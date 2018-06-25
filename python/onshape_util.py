@@ -57,11 +57,6 @@ Notes:
 import sys
 import json
 
-if sys.version_info.major == 2:
-    from urlparse import urlparse, parse_qs
-else:
-    from urllib.parse import urlparse, parse_qs
-
 from onshapepy.ext_client import ClientExtended, Pager
 import cooked_input as ci
 
