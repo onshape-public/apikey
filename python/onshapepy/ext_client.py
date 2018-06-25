@@ -45,8 +45,7 @@ class Pager():
             raise StopIteration
 
         self.cur_offset += 20
-        # response = self.client.get_next_page(next_page)
-        self.response = self.client.get_next_page(next_page, offset=self.cur_offset, limit=self.limit)
+        self.response = self.client.get_next_page(next_page)
         return json.loads(self.response.content)
 
     def get_offset(self):
