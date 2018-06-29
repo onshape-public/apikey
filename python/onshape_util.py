@@ -54,7 +54,8 @@ Notes:
 
 """
 
-import sys
+import csv
+# import sys
 import json
 
 from onshapepy.ext_client import ClientExtended, Pager
@@ -62,12 +63,24 @@ import cooked_input as ci
 
 IO_COMPANY_ID = '59f3676cac7f7c1075b79b71'
 IO_ENGR_TEAM_ID = '59f396f9ac7f7c1075bf8687'
-# TEST_ASSEM_DOC_ID = '0f9c85ccbf253b470b931452'
-TEST_ASSEM_DOC_ID = '038582dd6fb5b4e103ae2f91'  # IO0571
-# MAIN_WORKSPACE = '5c9a0477134719bc5b930595'
-MAIN_WORKSPACE = 'f1c5a07b9a53222043d46954'
-# TEST_ASSEM_ELEM_ID = 'fc5140cca987ed4102c2eb3f'
-TEST_ASSEM_ELEM_ID = '3bc610eb24f2b6686d2f99d5' # IO0571 assembly
+
+
+# Test assembly (bike)
+if False:
+    MAIN_WORKSPACE = '5c9a0477134719bc5b930595'
+    TEST_ASSEM_DOC_ID = '0f9c85ccbf253b470b931452'
+    TEST_ASSEM_ELEM_ID = 'fc5140cca987ed4102c2eb3f'
+elif False: # IO0571
+    # https://cad.onshape.com/documents/038582dd6fb5b4e103ae2f91/w/f1c5a07b9a53222043d46954/e/3bc610eb24f2b6686d2f99d5
+    MAIN_WORKSPACE = 'f1c5a07b9a53222043d46954'
+    TEST_ASSEM_DOC_ID = '038582dd6fb5b4e103ae2f91'  # IO0571
+    TEST_ASSEM_ELEM_ID = '3bc610eb24f2b6686d2f99d5' # IO0571 assembly
+else: # IO0264
+    # https://cad.onshape.com/documents/3db64a1208d4341aec7b94bb/w/2102c7bd5ea5ab0ed9cf45be/e/d3c27890aa1b23fbc22a55a0
+    TEST_ASSEM_DOC_ID = '3db64a1208d4341aec7b94bb'
+    MAIN_WORKSPACE = '2102c7bd5ea5ab0ed9cf45be'
+    TEST_ASSEM_ELEM_ID = 'd3c27890aa1b23fbc22a55a0'
+
 
 
 def help_cmd_action(cmd_str, cmd_vars, cmd_dict):
@@ -371,6 +384,7 @@ def get_bom_action(row, action_dict):
     use_type = ci.get_string(prompt=prompt_str, cleaners=type_cleaner, default="flattened", commands=std_commands)
     indented, multi_level = type_vals[use_type]
 
+    print(f'Fetching {multi_level} BOM from OnShape (did={did}, wvm={wvm}, eid={eid})')
     response = c.get_assembly_bom(did, wvm, eid, indented=indented, multi_level=multi_level, generate_if_absent=True)
     response_json = json.loads(response.text)
 
@@ -391,7 +405,12 @@ def get_bom_action(row, action_dict):
     created_at = bom_table['createdAt']
     doc_name = bom_table['bomSource']['document']['name']
     top_pn = bom_table['bomSource']['element']['partNumber']
-    top_revision = bom_table['bomSource']['element']['revision']
+
+    try:
+        top_revision = bom_table['bomSource']['element']['revision']    # column may not be there..
+    except (KeyError):
+        top_revision = '--'
+
     state = bom_table['bomSource']['element']['state']
     title = (f"\n\n{bom_type} {name} (format version {format_ver}) - {doc_name} ({state} {top_pn}{top_revision}) created_at: {created_at}")
 
@@ -408,6 +427,21 @@ def get_bom_action(row, action_dict):
     col_names = "Qty PartNum Rev State Desc".split()
     ci.Table(rows, col_names=col_names, title=title, tag_str='ItemNums').show_table()
     print('\n')
+
+    # export to csv
+    if ci.get_yes_no(prompt='Export to CSV file', default='no') == 'yes':
+        cmds = { '/cancel': ci.GetInputCommand(cancel_cmd_action) }
+        file_name = ci.get_string(prompt="CSV file_name to export to: ", default=f"{top_pn}_bom_export.csv", commands=cmds)
+
+        with open(file_name, "w", encoding='utf-8', newline='') as f:
+            hdr = 'ITEM_NUM QUANTITY PART_NUM REVISION STATE DESCRIPTION'
+            csv_writer = csv.writer(f)
+            csv_writer.writerow([f'{bom_type} BOM for:', top_pn])
+            csv_writer.writerow([])
+            csv_writer.writerow(hdr.split())
+
+            for item in bom_table['items']:
+                csv_writer.writerow([item['item'], item['quantity'], item['partNumber'], item['revision'], item['state'], item['description']])
 
 
 if __name__ == '__main__':
