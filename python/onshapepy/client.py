@@ -5,7 +5,12 @@ client
 Convenience functions for working with the Onshape API
 '''
 
-from onshape import Onshape
+import sys
+
+if sys.version_info.major < 3:
+    from onshape import Onshape
+else:
+    from .onshape import Onshape
 
 import mimetypes
 import random
@@ -26,17 +31,18 @@ class Client():
         - logging (bool, default=True): Turn logging on or off
     '''
 
-    def __init__(self, stack='https://cad.onshape.com', logging=True):
+    def __init__(self, stack='https://cad.onshape.com', creds='./creds.json', logging=True):
         '''
         Instantiates a new Onshape client.
 
         Args:
             - stack (str, default='https://cad.onshape.com'): Base URL
+            - creds (str, default='./cred.json'): location of OnShape credentials (acccess key and secret key)
             - logging (bool, default=True): Turn logging on or off
         '''
 
         self._stack = stack
-        self._api = Onshape(stack=stack, logging=logging)
+        self._api = Onshape(stack=stack, creds=creds, logging=logging)
 
     def new_document(self, name='Test Document', owner_type=0, public=False):
         '''
@@ -103,7 +109,7 @@ class Client():
 
         return self._api.request('get', '/api/documents/' + did)
 
-    def list_documents(self):
+    def list_documents(self, query={}):
         '''
         Get list of documents for current user.
 
@@ -111,7 +117,8 @@ class Client():
             - requests.Response: Onshape response data
         '''
 
-        return self._api.request('get', '/api/documents')
+        # return self._api.request('get', '/api/documents')
+        return self._api.request('get', '/api/documents', query)
 
     def create_assembly(self, did, wid, name='My Assembly'):
         '''

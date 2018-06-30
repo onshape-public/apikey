@@ -1,3 +1,4 @@
+cooked_input
 appnope==0.1.0
 closure-linter==2.3.13
 decorator==4.0.9

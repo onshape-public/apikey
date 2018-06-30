@@ -5,7 +5,20 @@ onshape
 Provides access to the Onshape REST API
 '''
 
-import utils
+import sys
+
+if sys.version_info.major == 2:
+    import utils
+    import urllib
+    from urlparse import urlparse
+    from urlparse import parse_qs
+    from urllib import urlencode
+else:
+    from . import utils
+    import urllib.parse
+    from urllib.parse import urlparse
+    from urllib.parse import parse_qs
+    from urllib.parse import urlencode
 
 import os
 import random
@@ -14,11 +27,8 @@ import json
 import hmac
 import hashlib
 import base64
-import urllib
 import datetime
 import requests
-from urlparse import urlparse
-from urlparse import parse_qs
 
 __all__ = [
     'Onshape'
@@ -104,13 +114,13 @@ class Onshape():
             - ctype (str, default='application/json'): HTTP Content-Type
         '''
 
-        query = urllib.urlencode(query)
+        query = urlencode(query)
 
         hmac_str = (method + '\n' + nonce + '\n' + date + '\n' + ctype + '\n' + path +
                     '\n' + query + '\n').lower().encode('utf-8')
 
         signature = base64.b64encode(hmac.new(self._secret_key, hmac_str, digestmod=hashlib.sha256).digest())
-        auth = 'On ' + self._access_key + ':HmacSHA256:' + signature.decode('utf-8')
+        auth = 'On ' + self._access_key.decode('utf-8') + ':HmacSHA256:' + signature.decode('utf-8')
 
         if self._logging:
             utils.log({
@@ -176,7 +186,7 @@ class Onshape():
         req_headers = self._make_headers(method, path, query, headers)
         if base_url is None:
             base_url = self._url
-        url = base_url + path + '?' + urllib.urlencode(query)
+        url = base_url + path + '?' + urlencode(query)
 
         if self._logging:
             utils.log(body)

@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup, find_packages
 
 config = {
-    'name': 'apikey',
-    'version': '1.0.0',
+    'name': 'onshapepy',
+    'version': '0.0.1',
     'description': 'Sample package to demonstrate using Onshape API keys',
     'long_description': open('README.md').read(),
-    'author': 'Ty-Lucas Kelley',
-    'url': 'https://github.com/onshape/apikey/tree/master/python',
+    'author': 'Len Wanger',
+    'url': 'https://github.com/lwanger/onshapepy',
     'license': open('LICENSE').read(),
-    'packages': [
-        'apikey'
-    ],
+    #'packages': [ 'onshapepy' ],
+    'packages': find_packages(),
     'classifiers': [
         'Programming Language :: Python',
         'Operating System :: MacOS :: MacOS X',
