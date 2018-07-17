@@ -37,7 +37,7 @@ application:
 
 ##### Instructions
 
-1. Create and manage your API key pairs from the [Developer Portal](https://dev-portal.dev.onshape.com);
+1. Create and manage your API key pairs from the [Developer Portal](https://dev-portal.onshape.com);
 note that the secret will only be displayed once! Keep it somewhere safe.
 
 2. Now that you have a key pair, see [below](#generating-a-request-signature) for
