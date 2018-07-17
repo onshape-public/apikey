@@ -5,7 +5,7 @@ gnureadline==6.3.3
 ipython==4.1.2
 ipython-genutils==0.1.0
 licenser==1.2.3
-mercurial==3.7.3
+mercurial==4.1.3
 path.py==8.2
 pathlib2==2.1.0
 pep8==1.7.0
