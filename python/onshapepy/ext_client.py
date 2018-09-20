@@ -175,7 +175,6 @@ class ClientExtended(Client):
 
 
     def get_parts_list(self, did, wvm):
-        # parts
         '''
         Get list  of parts in a document
 
@@ -192,3 +191,45 @@ class ClientExtended(Client):
         payload = {}
         route = '/api/parts/d/' + did + '/w/' + wvm
         return self._api.request('get', route, payload)
+
+
+    def set_part_metadata(self, did, wvm, eid, part_id, payload={}):
+        """
+        set metadata value for an OnShape part
+
+        - did (str): Document ID
+        - wvm (str): Workspace ID or version id or microversion id
+        - eid (str): element ID or version id or microversion id
+        - part_id (str): partID
+        - payload: dictionary containing key/value pairs to set on the entity
+
+        Returns:
+            - requests.Response: Onshape response data
+
+        /parts/d/:did/[wvm]/:wvm/e/:eid/partid/:partid/metadata
+
+        Example payload:
+
+        payload = {"name": "new name", "partNumber": "new part num"}
+        """
+        route = '/api/parts/d/{}/w/{}/e/{}/partid/{}/metadata'.format(did, wvm, eid, part_id)
+        return self._api.request('post', route, body=payload)
+
+
+    def set_parts_metadata(self, did, wvm, payload={}):
+        """
+        set metadata value for an OnShape list of parts
+
+        - did (str): Document ID
+        - wvm (str): Workspace ID or version id or microversion id
+        - payload: dictionary containing key/value pairs to set on the entity
+
+        Returns:
+            - requests.Response: Onshape response data
+
+        TODO - test!
+
+
+        """
+        route = '/api/parts/d/{}/w/{}'.format(did, wvm)
+        return self._api.request('post', route, body=payload)

@@ -11,6 +11,7 @@ config = {
     'description': 'Sample package to demonstrate using Onshape API keys',
     'long_description': open('README.md').read(),
     'author': 'Len Wanger',
+    'author_email': 'lwanger@impossible-objects.com',
     'url': 'https://github.com/lwanger/onshapepy',
     'license': open('LICENSE').read(),
     #'packages': [ 'onshapepy' ],

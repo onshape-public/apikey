@@ -15,6 +15,7 @@ for more information about the API see:
 
 
 TODO:
+    - Add: interactively get did, wfm, eid to get BOM, list elements and list parts... instead of hard-coded
     - More apis to play with:
 
     - try walking a project - get document for a project - get its parts, for each part of assembly get the part number and tags
