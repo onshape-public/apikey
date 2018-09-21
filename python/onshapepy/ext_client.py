@@ -1,6 +1,15 @@
 
 """
 Extended onshape api client
+
+TODO:
+    - The extended client should be integrated into the client class.
+    - Currently this is just a raw wrapper around the onshape api. For instance, set_part_metadata requires the
+    caller to put together the payload dictionary by hand. Similarly get (read) functions return a raw payload. It
+    would be helpful to add some data structures to make reading and writing payloads friendlier. In general some
+    abstraction layers above the api would be helpful.
+
+    Len Wanger, Impossible Objects 2018
 """
 
 import json
@@ -193,7 +202,7 @@ class ClientExtended(Client):
         return self._api.request('get', route, payload)
 
 
-    def set_part_metadata(self, did, wvm, eid, part_id, payload={}):
+    def set_part_metadata(self, did, wvm, eid, part_id, payload=None):
         """
         set metadata value for an OnShape part
 
@@ -210,26 +219,38 @@ class ClientExtended(Client):
 
         Example payload:
 
-        payload = {"name": "new name", "partNumber": "new part num"}
+            payload = {"name": "new name", "partNumber": "new part num"}
         """
+        if payload is None:
+            payload = {}
+
+        payload_json = json.dumps(payload)
+
         route = '/api/parts/d/{}/w/{}/e/{}/partid/{}/metadata'.format(did, wvm, eid, part_id)
-        return self._api.request('post', route, body=payload)
+        return self._api.request('post', route, body=payload_json)
 
 
-    def set_parts_metadata(self, did, wvm, payload={}):
+    def set_parts_metadata(self, did, wvm, payload=None):
         """
         set metadata value for an OnShape list of parts
 
         - did (str): Document ID
         - wvm (str): Workspace ID or version id or microversion id
-        - payload: dictionary containing key/value pairs to set on the entity
+        - payload: list of dictionaries, each containing key/value pairs to set on the entity
 
         Returns:
             - requests.Response: Onshape response data
 
-        TODO - test!
+        Note: payload is required to have elementId and partID for every part. All other metadata values are
+            optional (e.g. partNumber, material, appearance, etc.).
 
+        An example payload to set the partNumber for each part (assuming the part list was retrieved with get_parts_list:
 
+            payload = [{'elementId': part['elementId'], 'partId': part['partId'], 'partNumber': f'part-{id}' } for idx, part in enumerated(parts)]
         """
+        if payload is None:
+            payload = []
+
+        payload_json = json.dumps(payload)
         route = '/api/parts/d/{}/w/{}'.format(did, wvm)
-        return self._api.request('post', route, body=payload)
+        return self._api.request('post', route, body=payload_json)
