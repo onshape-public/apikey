@@ -151,6 +151,43 @@ class ClientExtended(Client):
         return self._api.request('get', '/api/documents/d/' + did + '/workspaces', payload)
 
 
+    def get_assembly_definition(self, did, wvm, eid, include_mate_connectors=False, include_mate_features=False,
+                                    include_non_solids=False, link_document_id=None):
+        '''
+        Get information about an Assembly. All coordinates and translation matrix components are in meters.
+
+        Args:
+            - did (str): Document ID
+            - wvm (str): Workspace ID or version id or microversion id
+            - eid (str): Element ID
+
+            - include_mate_connectors (bool, optional): Whether or not to include mate connectors of assembly and parts when includeMateFeatures is also true (adds a "mateConnectors" array in each part and includes mate connectors in assembly "features" array).
+            - include_mate_features (bool, optional): Whether or not to include mate features in response (adds a "features" array to response)
+            - include_non_solids (bool, optional): Whether or not to include non-assembly occurrences/instances that are not parts, such as surfaces and sketches. When omitted or set to false, surfaces and sketches are omitted from the output, as though they are not part of the assembly definition.
+            - link_document_id (string, optional): Id of document that links to the document being accessed. This may provide additional access rights to the document. Allowed only with version (v) path parameter.
+
+            bomColumnIDs not implemented yet
+
+        Returns:
+            - requests.Response: Onshape response data
+
+        / assemblies / d / : did / [wvm] / :wvm / e / :eid
+
+
+        '''
+
+        payload = {}
+        payload['includeMateConnectors'] = include_mate_connectors
+        payload['includeMateFeatures'] = include_mate_features
+        payload['includeNonSolids'] = include_non_solids
+
+        if link_document_id is not None:
+            payload['linkDocumentId'] = link_document_id
+
+        route = '/api/assemblies/d/' + did + '/w/' + wvm + '/e/' + eid
+        return self._api.request('get', route, payload)
+
+
     def get_assembly_bom(self, did, wvm, eid, indented=False, multi_level=False, generate_if_absent=True):
         '''
         Gets bom assoicated with an assembly
