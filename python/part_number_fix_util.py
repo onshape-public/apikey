@@ -37,6 +37,7 @@ import sys
 import tkinter as tk
 
 from onshapepy.ext_client import ClientExtended
+from onshapepy.utils import parse_url
 import cooked_input as ci
 
 # DID, WVM and EID for Part numbering test example model
@@ -102,31 +103,6 @@ def set_part_info_from_bom(part_from_bom):
         'partId': part_from_bom['itemSource']['partId'],
         'elementId': part_from_bom['itemSource']['elementId']
     }
-
-
-def parse_url(url):
-    """
-    parse an Onshape document URL into the components: did, wvm and eid.
-
-    :param url: URL to parse
-    :return: tuple of (did, wvm, eid)
-
-    URL looks like: https://cad.onshape.com/documents/d31dbb77700b695251588ff2/w/2c28968f83a53f9631d066fa/e/24f03732ef009163ad541a90
-
-    returns (d31dbb77700b695251588ff2, 2c28968f83a53f9631d066fa, 24f03732ef009163ad541a90)
-    """
-    split_list = url.split('/')
-
-    did = wvm = eid = None
-
-    if split_list[3] == 'documents':
-        did = split_list[4]
-    if split_list[5] == 'w':
-        wvm = split_list[6]
-    if split_list[7] == 'e':
-        eid = split_list[8]
-
-    return did, wvm, eid
 
 
 def get_url_and_pn_re(default=DEFAULT_URL, default_re=DEFAULT_PN_RE):

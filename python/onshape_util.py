@@ -55,11 +55,13 @@ Notes:
 
 """
 
+from collections import Counter
 import csv
 # import sys
 import json
 
 from onshapepy.ext_client import ClientExtended, Pager
+from onshapepy.utils import parse_url
 import cooked_input as ci
 
 IO_COMPANY_ID = '59f3676cac7f7c1075b79b71'
@@ -285,6 +287,51 @@ def get_eid_action(row, action_dict):
     return eid
 
 
+def get_dwe_from_url_action(row, action_dict):
+    # Get the element id to work with
+    url = ci.get_string(prompt="Get DID,WVM and EID from what Onshape document")
+    did, wvm, eid = parse_url(url)
+
+    action_dict['did'] = did
+    action_dict['wvm'] = wvm
+    action_dict['eid'] = eid
+
+    print(f'\nSetting did={did}, wvm={wvm} and eid={eid}\n\n')
+
+
+def list_stats_action(row, action_dict):
+    client = action_dict['client']
+    did = action_dict['did']
+    wvm = action_dict['wvm']
+    eid = action_dict['eid']
+
+    print(f'\nFetching model assembly definition (did={did}, wvm={wvm} and eid={eid})\n\n')
+
+    response = client.get_assembly_definition(did, wvm, eid)
+    response_json = json.loads(response.text)
+
+    # parse stats - total parts, type of parts, etc.
+    # response_json has:
+    #   response_json['rootAssembly']['occurences']
+    #   response_json['rootAssembly']['instances']['type'] # id, name, partId, isStandardContent, elementId, etc.
+    #   response_json['parts']['bodyType'] # partId, configuration, isStandardContent
+    #   response_json['partStudioFeatures']
+
+    print(f'Stats for Document (DID={did}):\n')
+    print(f'Number of Root assembly instances: {len(response_json["rootAssembly"]["instances"])}')
+    print(f'Number of Root assembly sub-assemblies: {len(response_json["subAssemblies"])}')
+
+    ra_types = Counter([part['type'] for part in response_json['rootAssembly']['instances']])
+    print(f'Root assembly instance types: {", ".join([f"{k}={v}" for k,v in ra_types.items()])}')
+
+    print(f'Number of parts: {len(response_json["parts"])}')
+    part_types = Counter([part['bodyType'] for part in response_json['parts']])
+    print(f'Part body types: {", ".join([f"{k}={v}" for k,v in part_types.items()])}')
+    print(f'Number of part studio features: {len(response_json["partStudioFeatures"])}')
+    print('\n\n')
+
+
+
 def list_teams_action(row, action_dict):
     c = action_dict['client']
     response = c.list_teams()
@@ -465,10 +512,12 @@ if __name__ == '__main__':
         ci.TableItem('List Documents', action=list_documents_action),
         ci.TableItem('Get did for a document', action=get_document_action),
         ci.TableItem('Get eid for a document', action=get_eid_action),
+        ci.TableItem('Get did, wvm and eid from a url', action=get_dwe_from_url_action),
         ci.TableItem('List Teams', action=list_teams_action),
         ci.TableItem('List Workspaces', action=list_workspaces_action),
         ci.TableItem('List Elements', action=list_elements_action),
         ci.TableItem('List Parts', action=list_parts_action),
+        ci.TableItem('List Stats', action=list_stats_action),
         ci.TableItem('Get BOM', action=get_bom_action),
     ]
     print()

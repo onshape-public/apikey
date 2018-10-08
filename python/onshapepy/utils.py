@@ -72,3 +72,31 @@ def log(msg, level=0):
 
     logger = logging.getLogger(lg)
     logger.log(lvl, msg)
+
+
+def parse_url(url):
+    """
+    parse an Onshape document URL into the components: did, wvm and eid.
+
+    :param url: URL to parse
+    :return: tuple of (did, wvm, eid)
+
+    URL looks like: https://cad.onshape.com/documents/d31dbb77700b695251588ff2/w/2c28968f83a53f9631d066fa/e/24f03732ef009163ad541a90
+
+    returns (d31dbb77700b695251588ff2, 2c28968f83a53f9631d066fa, 24f03732ef009163ad541a90)
+    """
+    split_list = url.split('/')
+
+    did = wvm = eid = None
+
+    try:
+        if split_list[3] == 'documents':
+            did = split_list[4]
+        if split_list[5] == 'w':
+            wvm = split_list[6]
+        if split_list[7] == 'e':
+            eid = split_list[8]
+    except (IndexError):
+        pass    # fail on first index error and keep items set to None from there on
+
+    return did, wvm, eid
