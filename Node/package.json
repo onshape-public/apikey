@@ -7,6 +7,10 @@
     "name": "Onshape Partner-API Team"
   },
   "dependencies": {
-    "minimist": "1.2.0"
+    "minimist": "^1.2.0",
+    "mocha": "^5.2.0"
+  },
+  "scripts": {
+    "test": "mocha"
   }
 }
