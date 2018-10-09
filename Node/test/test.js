@@ -10,15 +10,10 @@ describe('Array', function() {
 });
 describe('API Key Testing Spec', function() {
   describe('Use the API to make some get calls', function() {
-    it('should pass the API to the client when required', function() {
-        client.getDocuments({}, function (data) {
+    it('should get the user\'s documents', function() {
+        client(require('../config/apikey')).getDocuments({}, function (data) {
             data.should.be.ok()
         });
-    });
-    it('should return a list of many documents', function() {
-      client.getDocuments({}, function (data) {
-        data.should.be.ok()
-      });
     });
   });
 });

@@ -28,7 +28,7 @@ var buildNonce = function () {
   return nonce;
 }
 
-module.exports = (function (creds) {
+module.exports = function (creds) {
   var protocol = null;
   // basic error checking on creds
   if (typeof creds.baseUrl !== 'string' ||
@@ -372,4 +372,4 @@ module.exports = (function (creds) {
     delete: del,
     upload: upload
   };
-})(apikey);
+};
