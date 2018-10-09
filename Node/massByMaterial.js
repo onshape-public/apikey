@@ -32,7 +32,7 @@ if (!argv['d'] || !argv['e']) {
   util.error(errors.missingDocumentOrElementError);
 }
 
-app = require('./lib/app.js');
+app = require('./lib/app.js')(require('./config/apikey'));
 
 var massByMaterial = function (documentId, wvm, wvmId, elementId) {
   var partsByMaterial = {};
