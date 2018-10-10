@@ -22,7 +22,7 @@ if (!argv['f']) {
   util.error(errors.missingFile);
 }
 
-app = require('../lib/app.js')(require('../config/apikey'));
+app = require('../lib/app.js')(require('./getApiKeyFile'));
 
 var uploadBlob = function (documentId, workspaceId, file, mimeType) {
   app.uploadBlobElement(documentId, workspaceId, file, mimeType, function (data) {

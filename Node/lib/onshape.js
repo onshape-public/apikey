@@ -6,13 +6,6 @@ var querystring = require('querystring');
 var fs = require('fs');
 var pathModule = require('path');
 
-var apikey = null;
-try {
-  apikey = require('../config/apikey.js');
-} catch (e) {
-  util.error(errors.credentialsFileError);
-}
-
 // creates random 25-character string
 var buildNonce = function () {
   var chars = [

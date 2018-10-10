@@ -14,7 +14,7 @@ if (!argv['d'] || !argv['w']) {
   util.error(errors.missingDocumentOrWorkspaceError);
 }
 
-app = require('../lib/app.js')(require('../config/apikey'));
+app = require('../lib/app.js')(require('./getApiKeyFile'));
 
 var expensiveDoNothing = function (documentId, workspaceId) {
   partStudioId = null;

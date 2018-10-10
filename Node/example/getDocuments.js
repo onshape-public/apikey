@@ -20,7 +20,7 @@ for (var i = 0; i < queryParams.length; i++) {
 	}
 }
 
-app = require('../lib/app.js')(require('../config/apikey'));
+app = require('../lib/app.js')(require('./getApiKeyFile'));
 
 var getDocuments = function (queryObject) {
   app.getDocuments(queryObject, function (data) {
