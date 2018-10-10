@@ -1,5 +1,5 @@
-var util = require('./lib/util.js');
-var errors = require('./config/errors.js');
+var util = require('../lib/util.js');
+var errors = require('../config/errors.js');
 
 var minimist = require('minimist');
 var app = null;
@@ -20,7 +20,7 @@ for (var i = 0; i < queryParams.length; i++) {
 	}
 }
 
-app = require('./lib/app.js')(require('./config/apikey'));
+app = require('../lib/app.js')(require('../config/apikey'));
 
 var getDocuments = function (queryObject) {
   app.getDocuments(queryObject, function (data) {

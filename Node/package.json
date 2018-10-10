@@ -1,16 +1,27 @@
 {
-  "name": "@onshape/apikey-sample",
+  "name": "@onshape/apikey-node",
   "version": "0.0.0",
   "description": "Sample application using API keys",
   "private": true,
+  "sideEffects": false,
+  "license": "MIT",
   "author": {
     "name": "Onshape Partner-API Team"
   },
-  "dependencies": {
+  "dependencies": {},
+  "scripts": {
+    "test": "mocha"
+  },
+  "devDependencies": {
     "minimist": "^1.2.0",
     "mocha": "^5.2.0"
   },
-  "scripts": {
-    "test": "mocha"
-  }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onshape-public/apikey"
+  },
+  "main": "./lib/index.js",
+  "files": [
+    "/lib"
+  ]
 }

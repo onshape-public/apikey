@@ -1,5 +1,5 @@
-var util = require('./lib/util.js');
-var errors = require('./config/errors.js');
+var util = require('../lib/util.js');
+var errors = require('../config/errors.js');
 var pathModule = require('path');
 
 var minimist = require('minimist');
@@ -22,7 +22,7 @@ if (!argv['f']) {
   util.error(errors.missingFile);
 }
 
-app = require('./lib/app.js')(require('./config/apikey'));
+app = require('../lib/app.js')(require('../config/apikey'));
 
 var uploadBlob = function (documentId, workspaceId, file, mimeType) {
   app.uploadBlobElement(documentId, workspaceId, file, mimeType, function (data) {

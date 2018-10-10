@@ -1,5 +1,5 @@
-var util = require('./lib/util.js');
-var errors = require('./config/errors.js');
+var util = require('../lib/util.js');
+var errors = require('../config/errors.js');
 
 var minimist = require('minimist');
 var app = null;
@@ -32,7 +32,7 @@ if (!argv['d'] || !argv['e']) {
   util.error(errors.missingDocumentOrElementError);
 }
 
-app = require('./lib/app.js')(require('./config/apikey'));
+app = require('../lib/app.js')(require('../config/apikey'));
 
 var massByMaterial = function (documentId, wvm, wvmId, elementId) {
   var partsByMaterial = {};

@@ -1,5 +1,5 @@
-var util = require('./lib/util.js');
-var errors = require('./config/errors.js');
+var util = require('../lib/util.js');
+var errors = require('../config/errors.js');
 
 var minimist = require('minimist');
 var app = null;
@@ -14,7 +14,7 @@ if (!argv['d'] || !argv['w']) {
   util.error(errors.missingDocumentOrWorkspaceError);
 }
 
-app = require('./lib/app.js')(require('./config/apikey'));
+app = require('../lib/app.js')(require('../config/apikey'));
 
 var expensiveDoNothing = function (documentId, workspaceId) {
   partStudioId = null;

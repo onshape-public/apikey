@@ -11,7 +11,7 @@ if (!argv['d'] || !argv['w'] || !argv['e']) {
   util.error(errors.missingDWEError);
 }
 
-app = require('./lib/app.js')(require('./config/apikey'));
+app = require('../lib/app.js')(require('../config/apikey'));
 
 var partStudioStl = function (documentId, workspaceId, elementId) {
   app.partStudioStl(documentId, workspaceId, elementId, null, function (data) {
