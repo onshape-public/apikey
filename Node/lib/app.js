@@ -65,6 +65,13 @@ var getDocuments = function (queryObject, cb) {
     onshape.get(opts, cb);
 }
 
+var getEndpoints = function (cb) {
+    var opts = {
+        path: '/api/endpoints'
+    }
+    onshape.get(opts, cb);
+}
+
 var partStudioStl = function (documentId, workspaceId, elementId, queryObject, cb) {
     var opts = {
         d: documentId,
@@ -89,6 +96,7 @@ module.exports = function (creds) {
         deleteElement: deleteElement,
         uploadBlobElement: uploadBlobElement,
         getDocuments: getDocuments,
+        getEndpoints: getEndpoints,
         partStudioStl: partStudioStl
     };
 };
