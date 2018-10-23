@@ -7,6 +7,8 @@ Handy functions for API key sample app
 
 import logging
 from logging.config import dictConfig
+import json
+
 
 __all__ = [
     'log'
@@ -100,3 +102,12 @@ def parse_url(url):
         pass    # fail on first index error and keep items set to None from there on
 
     return did, wvm, eid
+
+
+def convert_response(response):
+    """
+    Convert Onshape api response data to a Python data structure (i.e. json conversion usually to a dictionary)
+    :param response:
+    :return:
+    """
+    return json.loads(response.text)
