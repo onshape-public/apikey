@@ -65,6 +65,16 @@ change the `stack` parameter on this line:
 c = ClientExtended(stack='https://cad.onshape.com', creds='path/to/creds.json')
 ```
 
+To get information regarding the onshape api run:
+
+```sh
+$ python get_endpoints.py
+```
+
+This will use to Onshape api to get documentation about the onShape api. Note: this utility requires pip
+installing cooked_input from pypi.
+
+
 ### Working with API Keys
 
 For general information on our API keys and how they work, read this
