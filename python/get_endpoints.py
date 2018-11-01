@@ -53,6 +53,20 @@ import cooked_input as ci
 TITLE_BLOCK= """
 <html>
 <head>
+    <style>
+        #p2 {{
+            margin-left: 5%;
+        }}
+        #p3 {{
+            margin-left: 10%;
+        }}
+        #t2 {{
+            margin-left: 5%;
+        }}
+        #t3 {{
+            margin-left: 10%;
+        }}
+    </style>
 	<title>{title}</title>
 </head>
 <body>
@@ -65,8 +79,9 @@ END_BLOCK="""
 </html>
 """
 
-def write_html_table(f, row_values, border=1, width=100, alignment="left"):
+def write_html_table(f, row_values, border=1, width=None, css_id=None):
     """
+    write html for a table
 
     :param f: file to write to
     :param row_values: list of tuples, each tuple is the values for a row. each cell value is the html for the
@@ -76,17 +91,26 @@ def write_html_table(f, row_values, border=1, width=100, alignment="left"):
     :return: None
     """
     f.write('<p>')
-    f.write(f'<table border="{border}", width="{width}%">')
-    for row in row_values:
-        f.write('<tr>')
-        for cell in row:
-            f.write(cell)
-        f.write('</tr>')
-    f.write('</table></p>')
+    args = ''
+    if css_id is not None:
+        args += f', id="{css_id}"'
+    if width is not None:
+        args += f', width="{width}"'
 
-def wrap_in_paragraph(s):
+    f.write(f'<table border="{border}"{args}>')
+    for row in row_values:
+        f.write('<tr>\n')
+        for cell in row:
+            f.write(cell + '\n')
+        f.write('</tr>\n')
+    f.write('</table></p>\n')
+
+def wrap_in_paragraph(s, css_id=None):
     # return the string (s) wrapped in html tags to make it a paragraph
-    return f'<p>{s}</p>'
+    args = ''
+    if css_id is not None:
+        args += f'id="{css_id}"'
+    return f'<p {args}>\n{s}\n</p>\n'
 
 def wrap_in_bold(s):
     # return the string (s) wrapped in html tags to make it bold
@@ -100,8 +124,24 @@ def wrap_in_th(s, align="left"):
     # return the string (s) wrapped in html tags for a table data item
     return f'<th align="{align}">{s}</th>'
 
-def make_html_table_rows(f, vals, fields, title):
-    f.write(wrap_in_bold(title))
+# class html_paragraph(object):
+#     def __init__(self, f, css_id=None):
+#         self.f = f
+#         self.css_id = css_id
+#
+#     def __enter__(self):
+#         args = ''
+#         if self.css_id is not None:
+#             args += f' id="{self.css_id}";'
+#         self.f.write(f'<p {args}>\n')
+#
+#     def __exit__(self, exc_type, exc_val, exc_tb):
+#         self.f.write(f'</p>\n')
+
+
+# def make_html_table_rows(f, vals, fields, title):
+def make_html_table_rows(f, vals, fields):
+    # f.write(wrap_in_bold(title))
     rows = []
     rows.append([wrap_in_th(s.capitalize()) for s in fields])
     for row in vals:
@@ -153,15 +193,17 @@ def export_individual_endpoint_as_html(f, ri):
             r_cell_val = wrap_in_td(f'{ri[val]}')
         rows.append((l_cell_val, r_cell_val))
 
-    write_html_table(f, rows, border=0, width=75, alignment="left")
+    write_html_table(f, rows, border=0, width="75%")
 
     # write response
     if 'success' in ri:
-        vals = ri['success']['fields']['Response']
-        fields = 'field type optional description'.split()
-        title = 'Response:'
-        rows = make_html_table_rows(f, vals, fields, title)
-        write_html_table(f, rows, border=1, width=75, alignment="left")
+        f.write(wrap_in_paragraph(wrap_in_bold('Success Entries:'), css_id="p2"))
+
+        for field in  ri['success']['fields'].items():
+            f.write(wrap_in_paragraph(wrap_in_bold(field[0]+':'), css_id="p3"))
+            fields = 'field type optional description'.split()
+            rows = make_html_table_rows(f, field[1], fields)
+            write_html_table(f, rows, border=1, width="75%", css_id="t3")
     else:
         f.write(wrap_in_paragraph('No response block'))
 
@@ -169,36 +211,50 @@ def export_individual_endpoint_as_html(f, ri):
     if 'header' in ri:
         vals = ri['header']['fields']['Header']
         fields = 'field type optional defaultValue description'.split()
-        title = 'Header:'
-        rows = make_html_table_rows(f, vals, fields, title)
-        write_html_table(f, rows, border=1, width=75, alignment="left")
+        f.write(wrap_in_paragraph(wrap_in_bold('Header:'), css_id="p2"))
+        rows = make_html_table_rows(f, vals, fields)
+        write_html_table(f, rows, border=1, width="75%", css_id="t2")
     else:
         f.write(wrap_in_paragraph('No header block'))
 
     # write parameter block
     if 'parameter' in ri:
+        f.write(wrap_in_paragraph(wrap_in_bold('Parameter:'), css_id="p2"))
+
+        if 'Body' in ri['parameter']['fields']:
+            vals = ri['parameter']['fields']['Body']
+            fields = 'field type optional description'.split()
+            title = 'Body:'
+            f.write(wrap_in_paragraph(wrap_in_bold(title), css_id="p3"))
+            rows = make_html_table_rows(f, vals, fields)
+            write_html_table(f, rows, border=1, width="75%", css_id="t3")
+
         if 'PathParam' in ri['parameter']['fields']:
             vals = ri['parameter']['fields']['PathParam']
             fields = 'field type optional description'.split()
             title = 'PathParam:'
-            rows = make_html_table_rows(f, vals, fields, title)
-            write_html_table(f, rows, border=1, width=75, alignment="left")
+            f.write(wrap_in_paragraph(wrap_in_bold(title), css_id="p3"))
+            rows = make_html_table_rows(f, vals, fields)
+            write_html_table(f, rows, border=1, width="75%", css_id="t3")
 
         if 'QueryParam' in ri['parameter']['fields']:
             vals = ri['parameter']['fields']['QueryParam']
             fields = 'field type optional defaultValue description'.split()
             title = 'QueryParam:'
-            rows = make_html_table_rows(f, vals, fields, title)
-            write_html_table(f, rows, border=1, width=75, alignment="left")
+            f.write(wrap_in_paragraph(wrap_in_bold(title), css_id="p3"))
+            rows = make_html_table_rows(f, vals, fields)
+            write_html_table(f, rows, border=1, width="75%", css_id="t3")
 
         if 'error' in ri:
+            f.write(wrap_in_paragraph(wrap_in_bold('Error:'), css_id="p2"))
             errors = ri['error']['fields']
             fields = 'field optional description'.split()
 
             for error in errors.items():
                 title = error[0]
+                f.write(wrap_in_paragraph(wrap_in_bold(title), css_id="p3"))
                 rows = make_html_table_rows(f, error[1], fields, title)
-                write_html_table(f, rows, border=1, width=75, alignment="left")
+                write_html_table(f, rows, border=1, width="75%", css_id="t3")
 
     end_block = END_BLOCK.format(ri=ri)
     f.write(end_block)
@@ -224,13 +280,13 @@ def show_individual_endpoint_action(row, action_dict):
     print(f'permissions: {permissions}')
 
     if 'success' in ri:
-        # TODO - Response is a dict with multiple items. Each looks like Response
-        print()
-        response = ri['success']['fields']['Response']
-        fields = 'field type optional description'.split()
-        field_names = [f.capitalize() for f in fields]
-        tbl = ci.create_table(items=response, fields=fields, field_names=field_names, gen_tags=False, add_exit=False, title='Response:')
-        tbl.show_table()
+        # Response is a dict with multiple items. Each looks like Response
+        print('\nSuccess Entries:\n')
+        for field in  ri['success']['fields'].items():
+            fields = 'field type optional description'.split()
+            field_names = [f.capitalize() for f in fields]
+            tbl = ci.create_table(items=field[1], fields=fields, field_names=field_names, gen_tags=False, add_exit=False, title=f'{field[0]}:')
+            tbl.show_table()
 
     if 'header' in ri:
         header = ri['header']['fields']['Header']
@@ -241,7 +297,14 @@ def show_individual_endpoint_action(row, action_dict):
         tbl.show_table()
 
     if 'parameter' in ri:
-        # TODO : add body - list of: tpye optional field description
+        # add body - list of: type optional field description
+        if 'Body' in ri['parameter']['fields']:
+            body = ri['parameter']['fields']['Body']
+            fields = 'field type optional description'.split()
+            field_names = [f.capitalize() for f in fields]
+            tbl = ci.create_table(items=body, fields=fields, field_names=field_names, gen_tags=False, add_exit=False, title='PathParam:')
+            tbl.show_table()
+
         if 'PathParam' in ri['parameter']['fields']:
             path_param = ri['parameter']['fields']['PathParam']
             fields = 'field type optional description'.split()
