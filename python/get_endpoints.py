@@ -363,6 +363,57 @@ def show_group_endpoints_action(row, action_dict):
     tbl.run()
 
 
+def get_endpoint_groups_action(row, action_dict):
+    # list endpoints as a table
+    fields = 'group groupTitle'.split()
+    field_names = [f.capitalize() for f in fields]
+    tbl = ci.create_table(items=action_dict['endpoints'], fields=fields, field_names=field_names, style=action_dict['style'],
+                          gen_tags=True, default_action=show_group_endpoints_action, add_item_to_item_data=True, add_exit=True,
+                          prompt='Chooose an endpoint')
+    tbl.run()
+
+
+def create_toc_action(row, action_dict):
+    endpoints = action_dict['endpoints']
+    for group in endpoints:
+        print(f'{group["groupTitle"]}')
+        for endpt in group['endpoints']:
+            # fields = 'title name type url description'.split()
+            print(f'\t{endpt["name"]}')
+
+    if ci.get_yes_no(prompt='Export as html?', default='no') == 'yes':
+        filename = ci.get_string(prompt='Export filename', default='endpoints_toc.html')
+        print(f'Exporting as html to file {filename}')
+
+        with open(filename, mode='w', encoding='utf-8') as f:
+            title_block = TITLE_BLOCK.format(title='Table of Contents', name='toc')
+            f.write(title_block)
+
+            rows = []
+            for group in endpoints:
+                row_str = wrap_in_bold( group["groupTitle"] )
+                row_str = wrap_in_td(row_str)
+                rows.append( (row_str,) )
+
+                for endpt in group['endpoints']:
+                    deprecated, replaced_by = is_deprecated(endpt)
+
+                    row_str = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + endpt["name"]
+                    if deprecated:
+                        row_str += f' ({wrap_in_bold("deprecated")} - replaced by {replaced_by})'
+                    row_str = wrap_in_td(row_str)
+                    rows.append( (row_str,) )
+
+            write_html_table(f, rows, border=0, width="75%")
+
+            # end page
+            end_block = END_BLOCK.format()
+            f.write(end_block)
+
+
+    print('\n\n')
+
+
 if __name__ == '__main__':
     if ci.get_yes_no(prompt='Fetch API endpoint information from Onshape (vs. use cached version)', default='no') == 'yes':
         stacks = {'cad': 'https://cad.onshape.com'}
@@ -382,13 +433,13 @@ if __name__ == '__main__':
             endpoints_str = f.read()
             endpoints = json.loads(endpoints_str)
 
-    # list endpoints as a table
-    style = ci.TableStyle(rows_per_page=99)
-    items = endpoints
-    fields = 'group groupTitle'.split()
-    field_names = [f.capitalize() for f in fields]
-    tbl = ci.create_table(items=items, fields=fields, field_names=field_names, style=style, gen_tags=True,
-                          default_action=show_group_endpoints_action, add_item_to_item_data=True, add_exit=True,
-                          prompt='Chooose an endpoint')
-    tbl.run()
+    style = ci.TableStyle(rows_per_page=99, show_cols=False, show_border=False)
+    item_data = {'endpoints': endpoints, 'style': style }
+    action_dict = {'endpoints': endpoints, 'style': style }
 
+    main_menu_items = [
+        ci.TableItem(col_values=["Get info for an individual endpoint"], action=get_endpoint_groups_action, item_data=item_data),
+        ci.TableItem(col_values=["Create table of contents"], action=create_toc_action, item_data=item_data),
+    ]
+    main_menu = ci.Table(rows=main_menu_items, prompt='Choose a menu item', style=style, add_exit=True, action_dict=action_dict)
+    main_menu.run()
