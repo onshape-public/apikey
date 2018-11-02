@@ -40,15 +40,21 @@ TODO:
     - export HTML of endpoints -- also make TOC page and page for each group. Add hyperlinks too
     - Export as PDF from ReportLab
     - use text-align:left and vertical align:top in style tag..., not align="left"
+    - use bootstrap formatting
 
 Len Wanger
 Copyright Impossible Objects, 2018
 """
 
+import json
+
 from onshapepy.ext_client import ClientExtended
 from onshapepy.utils import convert_response
 
 import cooked_input as ci
+
+CACHED_ENDPOINT_FILE = 'endpoints_cache.json'
+FETCH_BY_DEFAULT = 'no'
 
 TITLE_BLOCK= """
 <html>
@@ -358,12 +364,23 @@ def show_group_endpoints_action(row, action_dict):
 
 
 if __name__ == '__main__':
-    stacks = {'cad': 'https://cad.onshape.com'}
-    c = ClientExtended(stack=stacks['cad'], logging=False)
+    if ci.get_yes_no(prompt='Fetch API endpoint information from Onshape (vs. use cached version)', default='no') == 'yes':
+        stacks = {'cad': 'https://cad.onshape.com'}
+        c = ClientExtended(stack=stacks['cad'], logging=False)
 
-    print('Getting endpoints...\n')
-    response = c.get_endpoints()
-    endpoints = convert_response(response)
+        print('Getting api endpoints from Onshape...\n')
+        response = c.get_endpoints()
+        endpoints = convert_response(response)
+
+        if ci.get_yes_no(prompt='Save API endpoint information to file', default=FETCH_BY_DEFAULT) == 'yes':
+            with open(CACHED_ENDPOINT_FILE, 'w') as f:
+                f.write( json.dumps(endpoints) )
+    else:
+        print('Using saved api endpoints...\n')
+
+        with open(CACHED_ENDPOINT_FILE, 'r') as f:
+            endpoints_str = f.read()
+            endpoints = json.loads(endpoints_str)
 
     # list endpoints as a table
     style = ci.TableStyle(rows_per_page=99)
