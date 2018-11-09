@@ -1,32 +1,9 @@
 """
 get endpoints utility
 
-Uses the OnshapePy api to get information about the Onshape api
+Uses the OnshapePy api to create documentation for the Onshape api
 
 Returns a list of endpoints, each a dictionary with:
-
-    'Group' - str
-    'GroupTitle' - str
-    'Endpoints' - list of:
-        'type' - type of endpoint (post, get, delete, etc.)
-        'url' - URL for the endpoint
-        'title' - title for the endpoint
-        'name' - name for the endpoint
-        'description' - description for the endpoint
-        'group' - group for the endpoint (matches parent group)
-        'version' - version # (str) for the endpoint
-        'permission' - list of permissions (each a dictionary with 'name')
-        'parameter' - dictionary of parameters. Each with 'fields' being a dict with 'PathParam' and sometime 'QueryParam'
-                e.g {'group': 'PathParam', 'type': 'String', 'optional': False, 'field': 'pid', 'description': 'Purchase id'}
-        'success' = dict with 'fields'. Fields is a list of response items which are dicts
-            e.g. {'group': 'Response', 'type': 'Object[]', 'optional': False, 'field': 'parts', 'description': 'Parts list'}
-        'error' - dictionary with 'fields'. e.g. <class 'list'>: [{'group': 'ReplacedBy', 'optional': False, 'field': 'Accounts-cancelPurchaseNew', 'description': ''}]
-        'groupTitle' - groupTitle for the endpoint (matches parent groupTitle)
-        'header' -  dictionary with 'fields'. Fields is a dict with 'Header', which is a list of dicts
-            e.g. {'group': 'Header', 'type': 'String', 'optional': False, 'field': 'Content-Type', 'defaultValue': 'application/json', 'description': 'Content type'}
-
-
-        For example - the get parts endpoint is at: endpoints[18]['endpoints'][6]
 
     for more information about the API see:
         https://dev-portal.onshape.com/
@@ -37,27 +14,40 @@ Returns a list of endpoints, each a dictionary with:
         https://github.com/lwanger/onshapepy
 
 TODO:
-    - export HTML of endpoints -- also make TOC page and page for each group. Add hyperlinks too
     - Export as PDF from ReportLab
     - use text-align:left and vertical align:top in style tag..., not align="left"
-    - use bootstrap formatting
+    - add scroll bars to toc
+    - formatting fixes
 
 Len Wanger
 Copyright Impossible Objects, 2018
 """
 
 import json
+import os
+from pathlib import Path
 
 from onshapepy.ext_client import ClientExtended
 from onshapepy.utils import convert_response
 
 import cooked_input as ci
 
+ONSHAPEPY_URL = 'https://github.com/lwanger/onshapepy'
+TOC_FILENAME = 'endpoints_toc.html'
 CACHED_ENDPOINT_FILE = 'endpoints_cache.json'
 FETCH_BY_DEFAULT = 'no'
 
 TITLE_BLOCK= """
-<html>
+<!DOCTYPE html>
+<html lang="en">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+  <script> function loadUrl(url) {{document.getElementById("content-frame").src = url;}}</script>
+
 <head>
     <style>
         #p2 {{
@@ -77,7 +67,7 @@ TITLE_BLOCK= """
 </head>
 <body>
 
-<h1>{title}: {name}</h1>
+<h2>{name}</h2>
 """
 
 END_BLOCK="""
@@ -111,6 +101,7 @@ def write_html_table(f, row_values, border=1, width=None, css_id=None):
         f.write('</tr>\n')
     f.write('</table></p>\n')
 
+
 def wrap_in_paragraph(s, css_id=None):
     # return the string (s) wrapped in html tags to make it a paragraph
     args = ''
@@ -118,40 +109,43 @@ def wrap_in_paragraph(s, css_id=None):
         args += f'id="{css_id}"'
     return f'<p {args}>\n{s}\n</p>\n'
 
+
 def wrap_in_bold(s):
     # return the string (s) wrapped in html tags to make it bold
     return f'<b>{s}</b>'
+
 
 def wrap_in_td(s, align="left"):
     # return the string (s) wrapped in html tags for a table data item
     return f'<td align="{align}">{s}</td>'
 
+
 def wrap_in_th(s, align="left"):
     # return the string (s) wrapped in html tags for a table data item
     return f'<th align="{align}">{s}</th>'
 
-# class html_paragraph(object):
-#     def __init__(self, f, css_id=None):
-#         self.f = f
-#         self.css_id = css_id
-#
-#     def __enter__(self):
-#         args = ''
-#         if self.css_id is not None:
-#             args += f' id="{self.css_id}";'
-#         self.f.write(f'<p {args}>\n')
-#
-#     def __exit__(self, exc_type, exc_val, exc_tb):
-#         self.f.write(f'</p>\n')
+
+def wrap_in_aref(url, text, target="_top"):
+    return f'<a href="{url}" target="{target}">{text}</a>'
 
 
-# def make_html_table_rows(f, vals, fields, title):
+def bootstrap_radio_button(f, text, active=''):
+    f.write(f'<label class="btn btn-secondary {active}>\n')
+    f.write(f'<input type="radio" name="options" id="{text}" autocomplete="off" checked>{text}\n')
+    f.write('</label>\n')
+
+
+def bootstrap_button(f, text, url=None, active=''):
+    f.write('<label class="btn btn btn-sm">\n')
+    f.write(f'<button target="content-frame" class="btn btn {active}" role="button" onclick="loadUrl(\'{url}\')">{text}</button>\n')
+    f.write('</label>\n')
+
+
 def make_html_table_rows(f, vals, fields):
-    # f.write(wrap_in_bold(title))
     rows = []
     rows.append([wrap_in_th(s.capitalize()) for s in fields])
     for row in vals:
-        response_row_vals = [row[v] for v in fields]
+        response_row_vals = [row[v] if v in row else '--' for v in fields]
         rows.append([wrap_in_td(s) for s in response_row_vals])
     return rows
 
@@ -245,6 +239,7 @@ def export_individual_endpoint_as_html(f, ri):
 
         if 'QueryParam' in ri['parameter']['fields']:
             vals = ri['parameter']['fields']['QueryParam']
+
             fields = 'field type optional defaultValue description'.split()
             title = 'QueryParam:'
             f.write(wrap_in_paragraph(wrap_in_bold(title), css_id="p3"))
@@ -259,7 +254,7 @@ def export_individual_endpoint_as_html(f, ri):
             for error in errors.items():
                 title = error[0]
                 f.write(wrap_in_paragraph(wrap_in_bold(title), css_id="p3"))
-                rows = make_html_table_rows(f, error[1], fields, title)
+                rows = make_html_table_rows(f, error[1], fields)
                 write_html_table(f, rows, border=1, width="75%", css_id="t3")
 
     end_block = END_BLOCK.format(ri=ri)
@@ -336,12 +331,6 @@ def show_individual_endpoint_action(row, action_dict):
                 tbl = ci.create_table(items=error[1], fields=fields, field_names=field_names, gen_tags=False, add_exit=False, title=error[0])
                 tbl.show_table()
 
-    print('\n')
-    if ci.get_yes_no(prompt='Export to html?', default='no') == 'yes':
-        filename = ci.get_string(prompt='Export filename', default=ri["name"]+'.html')
-        with open(filename, mode='w', encoding='utf-8') as f:
-            export_individual_endpoint_as_html(f, ri)
-
     print('\n\n\n')
 
 
@@ -373,43 +362,79 @@ def get_endpoint_groups_action(row, action_dict):
     tbl.run()
 
 
-def create_toc_action(row, action_dict):
-    endpoints = action_dict['endpoints']
+def create_toc(f, endpoints):
+    title_block = TITLE_BLOCK.format(title='Onshape REST API Documentation', name='toc')
+    f.write(title_block)
+
+    # write jumbotron div
+    f.write('<div class ="jumbotron text-center">\n')
+    f.write('<h1> Onshape REST API Documentation</h1>\n')
+    f.write(f'<p> Created by Len Wanger using {wrap_in_aref(ONSHAPEPY_URL, "onshapepy")} </p>\n')
+    f.write('</div>\n')
+
+    # write toc button group
+    f.write('<div id="top-frame" class="container" style="margin-top:30px">\n')
+    f.write('<div class="row">\n')
+    f.write('<div class="col-sm-4">\n')
+    f.write('<h2>Table of Contents</h2>\n')
+    f.write('<div class="btn-group-vertical btn-group-toggle" id="toc" name="toc" data-toggle="buttons">\n')
+
+    # rows = []
+    active = 'active'
     for group in endpoints:
-        print(f'{group["groupTitle"]}')
+        bootstrap_radio_button(f, group["groupTitle"], active='disabled')
+
         for endpt in group['endpoints']:
-            # fields = 'title name type url description'.split()
-            print(f'\t{endpt["name"]}')
+            deprecated, replaced_by = is_deprecated(endpt)
+            row_str = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + endpt["name"]
+            if deprecated:
+                row_str += f' ({wrap_in_bold("deprecated")})'
 
-    if ci.get_yes_no(prompt='Export as html?', default='no') == 'yes':
-        filename = ci.get_string(prompt='Export filename', default='endpoints_toc.html')
-        print(f'Exporting as html to file {filename}')
+            url = endpt["name"] + '.html'
+            bootstrap_button(f, row_str, url=url, active=active)
+            if len(active) > 0:
+                first_url = url
+            else:
+                active = ''
 
-        with open(filename, mode='w', encoding='utf-8') as f:
-            title_block = TITLE_BLOCK.format(title='Table of Contents', name='toc')
-            f.write(title_block)
+    # end toc button group and add iframe
+    f.write('</div>\n</div>\n')
+    f.write('<div class="col-sm-8">\n')
+    f.write(
+        f'<iframe id="content-frame" name="content-frame" data-target="toc" src="{first_url}" width="100%" style="height:100%; border:none"></iframe>\n')
+    f.write('</div>\n')
+    f.write('</div> <! row -->\n')
+    f.write('</div> <! top-frame -->\n')
 
-            rows = []
-            for group in endpoints:
-                row_str = wrap_in_bold( group["groupTitle"] )
-                row_str = wrap_in_td(row_str)
-                rows.append( (row_str,) )
+    # end page
+    end_block = END_BLOCK.format()
+    f.write(end_block)
 
-                for endpt in group['endpoints']:
-                    deprecated, replaced_by = is_deprecated(endpt)
 
-                    row_str = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + endpt["name"]
-                    if deprecated:
-                        row_str += f' ({wrap_in_bold("deprecated")} - replaced by {replaced_by})'
-                    row_str = wrap_in_td(row_str)
-                    rows.append( (row_str,) )
+def create_html_action(row, action_dict):
+    endpoints = action_dict['endpoints']
+    export_dir = Path.home().joinpath('export')
+    dir_validator = ci.SimpleValidator(os.path.isdir)
 
-            write_html_table(f, rows, border=0, width="75%")
+    try:
+        export_dir = ci.get_string(prompt='directory for html export: ', validators=dir_validator, default=str(export_dir))
+    except (ci.ValidationError):
+        if ci.get_yes_no(prompt='Should I create the directory', default='no') == 'yes':
+            os.mkdir(export_dir)
+        else:
+            print('Unable to export html')
+            return
 
-            # end page
-            end_block = END_BLOCK.format()
-            f.write(end_block)
+    toc_filename = Path(export_dir, TOC_FILENAME)
 
+    with open(toc_filename, mode='w', encoding='utf-8') as f:
+        create_toc(f, endpoints)
+
+    for group in endpoints:
+        for endpt in group['endpoints']:
+            filename = Path(export_dir, endpt["name"] + '.html')
+            with open(filename, mode='w', encoding='utf-8') as f:
+                export_individual_endpoint_as_html(f, endpt)
 
     print('\n\n')
 
@@ -439,7 +464,7 @@ if __name__ == '__main__':
 
     main_menu_items = [
         ci.TableItem(col_values=["Get info for an individual endpoint"], action=get_endpoint_groups_action, item_data=item_data),
-        ci.TableItem(col_values=["Create table of contents"], action=create_toc_action, item_data=item_data),
+        ci.TableItem(col_values=["Export api documentation as html"], action=create_html_action, item_data=item_data),
     ]
     main_menu = ci.Table(rows=main_menu_items, prompt='Choose a menu item', style=style, add_exit=True, action_dict=action_dict)
     main_menu.run()
