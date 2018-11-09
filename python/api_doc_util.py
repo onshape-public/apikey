@@ -1,5 +1,5 @@
 """
-get endpoints utility
+Onshape API Documentation utility
 
 Uses the OnshapePy api to create documentation for the Onshape api
 
@@ -16,8 +16,6 @@ Returns a list of endpoints, each a dictionary with:
 TODO:
     - Export as PDF from ReportLab
     - use text-align:left and vertical align:top in style tag..., not align="left"
-    - add scroll bars to toc
-    - formatting fixes
 
 Len Wanger
 Copyright Impossible Objects, 2018
@@ -33,7 +31,7 @@ from onshapepy.utils import convert_response
 import cooked_input as ci
 
 ONSHAPEPY_URL = 'https://github.com/lwanger/onshapepy'
-TOC_FILENAME = 'endpoints_toc.html'
+TOC_FILENAME = '_toc.html'
 CACHED_ENDPOINT_FILE = 'endpoints_cache.json'
 FETCH_BY_DEFAULT = 'no'
 
@@ -62,12 +60,14 @@ TITLE_BLOCK= """
         #t3 {{
             margin-left: 10%;
         }}
+        .anyClass {{
+            height:600px;
+            overflow-y: scroll;
+        }}
     </style>
 	<title>{title}</title>
 </head>
 <body>
-
-<h2>{name}</h2>
 """
 
 END_BLOCK="""
@@ -335,11 +335,6 @@ def show_individual_endpoint_action(row, action_dict):
 
 
 def show_group_endpoints_action(row, action_dict):
-    """
-    row.item_data['item'] has: 'group', 'groupTitle', 'endpoints'
-    row.item_data['item']['endpoints'] is list of: type, url, title, name, description, group, version, permission (list), success (dict),
-        groupTitle, header (dict), parameter (dict)
-    """
     print(f'Received row for endpoint: {row.item_data["item"]["groupTitle"]}')
 
     style = ci.TableStyle(rows_per_page=99)
@@ -373,13 +368,12 @@ def create_toc(f, endpoints):
     f.write('</div>\n')
 
     # write toc button group
-    f.write('<div id="top-frame" class="container" style="margin-top:30px">\n')
+    f.write('<div id="top-frame" class="container-fluid" style="margin-top:30px">\n')
     f.write('<div class="row">\n')
-    f.write('<div class="col-sm-4">\n')
+    f.write('<div class="col-sm-4 anyClass">\n')
     f.write('<h2>Table of Contents</h2>\n')
     f.write('<div class="btn-group-vertical btn-group-toggle" id="toc" name="toc" data-toggle="buttons">\n')
 
-    # rows = []
     active = 'active'
     for group in endpoints:
         bootstrap_radio_button(f, group["groupTitle"], active='disabled')
@@ -400,8 +394,7 @@ def create_toc(f, endpoints):
     # end toc button group and add iframe
     f.write('</div>\n</div>\n')
     f.write('<div class="col-sm-8">\n')
-    f.write(
-        f'<iframe id="content-frame" name="content-frame" data-target="toc" src="{first_url}" width="100%" style="height:100%; border:none"></iframe>\n')
+    f.write(f'<iframe id="content-frame" name="content-frame" data-target="toc" src="{first_url}" width="100%" style="height:100%; border:none"></iframe>\n')
     f.write('</div>\n')
     f.write('</div> <! row -->\n')
     f.write('</div> <! top-frame -->\n')
