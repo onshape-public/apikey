@@ -364,7 +364,7 @@ def create_toc(f, endpoints):
     # write jumbotron div
     f.write('<div class ="jumbotron text-center">\n')
     f.write('<h1> Onshape REST API Documentation</h1>\n')
-    f.write(f'<p> Created by Len Wanger using {wrap_in_aref(ONSHAPEPY_URL, "onshapepy")} </p>\n')
+    f.write(f'<p> Created using {wrap_in_aref(ONSHAPEPY_URL, "onshapepy")} </p>\n')
     f.write('</div>\n')
 
     # write toc button group
