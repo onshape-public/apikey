@@ -7,7 +7,9 @@ an ClientExtended class which adds functionality to the Client class in the orig
 
 - Allowing credential to be in a specified file location
 - Additional api calls for: lists of teams, parts, elements, and workspaces, setting part metadata, fetching bills of material (BOMs), paged output (Pager).
-- onshape_util - an Python-based interactive, command line (CLI) utility to run OnShape api calls.
+- onshape_util - a Python-based interactive, command line (CLI) utility to run OnShape api calls.
+- api_doc_util - a Python-based interactive, command line (CLI) utility that uses onshapepy to view and export 
+documentation for the REST API.
 
 Note: There is another fork of the code with the same project name (AguaClara/onshapepy). We are working to merge the two together to get a single version with a superset of the two projects.
 
