@@ -16,11 +16,14 @@ Returns a list of endpoints, each a dictionary with:
 TODO:
     - Export as PDF from ReportLab
     - use text-align:left and vertical align:top in style tag..., not align="left"
+    - Add search bar to docs...
+
 
 Len Wanger
 Copyright Impossible Objects, 2018
 """
 
+import datetime
 import json
 import os
 from pathlib import Path
@@ -357,14 +360,14 @@ def get_endpoint_groups_action(row, action_dict):
     tbl.run()
 
 
-def create_toc(f, endpoints):
+def create_toc(f, endpoints, created):
     title_block = TITLE_BLOCK.format(title='Onshape REST API Documentation', name='toc')
     f.write(title_block)
 
     # write jumbotron div
     f.write('<div class ="jumbotron text-center">\n')
     f.write('<h1> Onshape REST API Documentation</h1>\n')
-    f.write(f'<p> Created using {wrap_in_aref(ONSHAPEPY_URL, "onshapepy")} </p>\n')
+    f.write(f'<p> Created on {str(created)} using {wrap_in_aref(ONSHAPEPY_URL, "onshapepy")} </p>\n')
     f.write('</div>\n')
 
     # write toc button group
@@ -406,6 +409,7 @@ def create_toc(f, endpoints):
 
 def create_html_action(row, action_dict):
     endpoints = action_dict['endpoints']
+    created = action_dict['created']
     export_dir = Path.home().joinpath('export')
     dir_validator = ci.SimpleValidator(os.path.isdir)
 
@@ -421,7 +425,7 @@ def create_html_action(row, action_dict):
     toc_filename = Path(export_dir, TOC_FILENAME)
 
     with open(toc_filename, mode='w', encoding='utf-8') as f:
-        create_toc(f, endpoints)
+        create_toc(f, endpoints, created)
 
     for group in endpoints:
         for endpt in group['endpoints']:
@@ -440,20 +444,24 @@ if __name__ == '__main__':
         print('Getting api endpoints from Onshape...\n')
         response = c.get_endpoints()
         endpoints = convert_response(response)
+        created = datetime.datetime.now()
 
         if ci.get_yes_no(prompt='Save API endpoint information to file', default=FETCH_BY_DEFAULT) == 'yes':
+            cache_content = (created.timestamp(), endpoints)
             with open(CACHED_ENDPOINT_FILE, 'w') as f:
-                f.write( json.dumps(endpoints) )
+                f.write( json.dumps(cache_content) )
     else:
         print('Using saved api endpoints...\n')
 
         with open(CACHED_ENDPOINT_FILE, 'r') as f:
-            endpoints_str = f.read()
-            endpoints = json.loads(endpoints_str)
+            content_str = f.read()
+            cache_content = json.loads(content_str)
+            created = datetime.date.fromtimestamp(cache_content[0])
+            endpoints = cache_content[1]
 
     style = ci.TableStyle(rows_per_page=99, show_cols=False, show_border=False)
     item_data = {'endpoints': endpoints, 'style': style }
-    action_dict = {'endpoints': endpoints, 'style': style }
+    action_dict = {'endpoints': endpoints, 'created': created, 'style': style }
 
     main_menu_items = [
         ci.TableItem(col_values=["Get info for an individual endpoint"], action=get_endpoint_groups_action, item_data=item_data),
