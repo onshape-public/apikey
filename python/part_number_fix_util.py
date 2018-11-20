@@ -9,25 +9,15 @@ matches a regular expression for a part number, and sets those parts part number
 name.
 
 for more information about the API see:
-
         https://dev-portal.onshape.com/
 
     also useful to use the OnShape api-explorer app in OnShape
 
     this code uses  onshapepy to do authentication:
-
         https://github.com/lwanger/onshapepy
-
-
-TODO:
-    - Add: interactively get did, wfm, eid to get BOM, list elements and list parts... instead of hard-coded
-    - read list of parts
-    - figure out parts needing the new PN
-    - set the part number from the name
 
 Len Wanger
 Copyright Impossible Objects, 2018
-
 """
 
 import datetime
@@ -72,22 +62,8 @@ To get the DID, WVM and EID, go to the model in Onshape and look at the URL. It 
     The string after 'e' is the EID (e.g. 24f03732ef009163ad541a90)
 """
 
-# which method to use to get and set the parts numbers
-USE_GET_PARTS = 1
-USE_ASMBLY_DEFN = 2
-USE_ASMBLY_BOM = 3
-# GET_PARTS_METHOD = USE_GET_PARTS  # TODO - doesn't set part numbers if not in part studio
-# GET_PARTS_METHOD = USE_ASMBLY_DEFN    # TODO - crashes
-GET_PARTS_METHOD = USE_ASMBLY_BOM   # TODO - HTTP 400 error (bad request) on setting part numbers
 
-SET_PART = 1
-SET_PARTS = 1
-SET_PARTS_METHOD = SET_PARTS
-
-
-def should_set_part_number(part, part_re) -> bool:
-    part_pn = part['partNumber']
-    part_name = part['name']
+def should_set_part_number(part_pn, part_name, part_re) -> bool:
     if (part_pn is None or len(part_pn) == 0) and re.search(part_re, part_name):
         return True
     else:
@@ -105,8 +81,8 @@ def set_part_info_from_bom(part_from_bom):
     }
 
 
-def get_url_and_pn_re(default=DEFAULT_URL, default_re=DEFAULT_PN_RE):
-    if True:   # use cooked_input
+def get_url_and_pn_re(default=DEFAULT_URL, default_re=DEFAULT_PN_RE, use_gui=True):
+    if not use_gui:   # use cooked_input
         url = ci.get_string(prompt="What Onshape document URL do want to renumber", default=default)
         pn_re = ci.get_string(prompt="Regular expression for part names to set as part number", default=DEFAULT_PN_RE)
 
@@ -116,7 +92,7 @@ def get_url_and_pn_re(default=DEFAULT_URL, default_re=DEFAULT_PN_RE):
         # TODO -- need to clean up -- add instructions, tables, etc.
         window = tk.Tk()
         window.title("Onshape Part Re-numbering Utility")
-        window.geometry('500x150')
+        window.geometry('950x150')
 
         url_str_var = tk.StringVar()
         url_str_var.set(default)
@@ -126,7 +102,7 @@ def get_url_and_pn_re(default=DEFAULT_URL, default_re=DEFAULT_PN_RE):
         lbl = tk.Label(window, text="Onshape model document URL:")
         lbl.grid(column=0, row=0)
 
-        txt = tk.Entry(window, textvariable=url_str_var, width=40)
+        txt = tk.Entry(window, textvariable=url_str_var, width=120)
         txt.grid(column=1, row=0)
 
         lbl = tk.Label(window, text="Part number regular expression:")
@@ -150,6 +126,37 @@ def get_url_and_pn_re(default=DEFAULT_URL, default_re=DEFAULT_PN_RE):
         return did, wvm, eid, pn_re
 
 
+def rewrite_part_numbers(did, parts):
+    """
+    Sets the part number to the part name for a list of parts
+
+    :param did:
+    :param parts: list of part studio parts from the assembly bom endpoint
+    :return: True if rewrote parts successfully
+
+    assumes part is from the bom table (i.e. has itemSource)
+    """
+    print(f'Re-writing part numbers for did={did}\n')
+
+    if parts is not None:
+        for part in parts:
+            part_id = part['itemSource']['partId']
+            wvm_type = part['itemSource']['wvmType']
+            part_wvm = part['itemSource']['wvmId']
+            part_did = part['itemSource']['documentId']
+            part_eid = part['itemSource']['elementId']
+
+            payload = {'partNumber': part['name']}
+            print('Rewriting part number for part {}'.format(part["name"]))
+
+            result = c.set_part_metadata(part_did, part_wvm, part_eid, part_id, payload, wvm_type)
+            if not result.ok:
+                print('Error: Could not set part number for parts={} (result code={}, err={})'.format(part["name"], result.status_code, result.reason))
+                return False
+
+    return True
+
+
 if __name__ == '__main__':
     stacks = {'cad': 'https://cad.onshape.com'}
     c = ClientExtended(stack=stacks['cad'], logging=False)
@@ -157,26 +164,20 @@ if __name__ == '__main__':
     print(HELP_STR)
     did, wvm, eid, pn_re = get_url_and_pn_re(default=DEFAULT_URL)
 
+    filtered_parts = None
+    linked_docs = None
+
     # get part list
     print('\nFetching part information from Onshape...')
     start_time = datetime.datetime.now()
+    bom = c.get_assembly_bom(did, wvm, eid)
+    bom_json = json.loads(bom.text)
+    end_time = datetime.datetime.now()
 
-    if GET_PARTS_METHOD==USE_GET_PARTS:   # Use get_parts_list (returning an empty list of parts if no part studio)
-        response = c.get_parts_list(did, wvm)
-        end_time = datetime.datetime.now()
-        response_json = json.loads(response.text)
-        filtered_parts = [part for part in response_json if should_set_part_number(part, pn_re)]
-    elif GET_PARTS_METHOD==USE_ASMBLY_DEFN:
-        response = c.get_assembly_definition(did, wvm, eid) # use assempbly definiton - slow and doesn't provide part name or number
-        end_time = datetime.datetime.now()
-        response_json = json.loads(response.text)
-        # TODO - this crashes as there is no 'partNumber' or 'name' returned on parts
-        filtered_parts = [part for part in response_json['parts'] if should_set_part_number(part, pn_re)]
-    else:   # USE_ASMBLY_BOM - use assembly bom - very slow but works
-        response = c.get_assembly_bom(did, wvm, eid)
-        end_time = datetime.datetime.now()
-        response_json = json.loads(response.text)
-        filtered_parts = [set_part_info_from_bom(part) for part in response_json['bomTable']['items'] if should_set_part_number(part, pn_re)]
+    filtered_parts = []
+    for part in bom_json['bomTable']['items']:
+        if should_set_part_number(part['partNumber'], part['name'], pn_re):
+            filtered_parts.append(part)
 
     time_delta = end_time - start_time
     print(f'Onshape call time = {str(time_delta)} seconds')
@@ -190,40 +191,18 @@ if __name__ == '__main__':
     tbl.show_table()
 
     if ci.get_yes_no(prompt='Do you want to re-write the part numbers with the part names', default='no') == 'yes':
-        print('Re-writing part numbers\n')
-
-        if SET_PARTS_METHOD==SET_PARTS:  # set_parts_metadata (one call)
-            payload = [{'elementId': part['elementId'], 'partId': part['partId'], 'partNumber': part['name'] } for part in filtered_parts]
-            result = c.set_parts_metadata(did, wvm, payload=payload)
-        else:   # SET_PART -- set_part_metadata (one call per part)
-            for part in filtered_parts:
-                payload = { 'partNumber': part['name'] }
-                result = c.set_part_metadata(did, wvm, part['elementId'], part['partId'], payload=payload)
-                if not result.ok:
-                    break
-
-        if not result.ok:
-            part_names = ", ".join([part['name'] for part in filtered_parts])
-            print('Error: Could not set part number for parts=[{}] (result code={}, err={})'.format(part_names,
-                                                                            result.status_code, result.reason))
-            sys.exit(1)
+        rewrite_part_numbers(did, filtered_parts)
 
         # show results
         print('\nParts after setting part numbers:')
-        filtered_part_set = {part['partId'] for part in filtered_parts}
+        filtered_part_set = {part['name'] for part in filtered_parts}
 
-        if GET_PARTS_METHOD==USE_GET_PARTS:
-            response = c.get_parts_list(did, wvm)
-            response_json = json.loads(response.text)
-            changed_parts = [part for part in response_json if part['partId'] in filtered_part_set]
-        elif GET_PARTS_METHOD==USE_ASMBLY_DEFN:
-            response = c.get_assembly_definition(did, wvm, eid)
-            response_json = json.loads(response.text)
-            changed_parts = [part for part in response_json['parts'] if part['partId'] in part['partId'] in filtered_parts]
-        else: # USE_ASMBLY_BOM
-            response = c.get_assembly_bom(did, wvm, eid)
-            response_json = json.loads(response.text)
-            changed_parts = [part for part in response_json['bomTable']['items'] if part['partId'] in part['partId'] in filtered_parts]
+        bom = c.get_assembly_bom(did, wvm, eid)
+        bom_json = json.loads(bom.text)
+        changed_parts = [part for part in bom_json['bomTable']['items'] if part['name'] in filtered_part_set]
+        for part in changed_parts:
+            part['partId'] = part['itemSource']['partId']
+            part['elementId'] = part['itemSource']['elementId']
 
         tbl = ci.create_table(changed_parts, fields=fields, field_names=fields, gen_tags=None, item_data=None,
                               add_item_to_item_data=True, title=None, prompt=None, default_choice=None,

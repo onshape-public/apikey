@@ -230,13 +230,14 @@ class ClientExtended(Client):
         return self._api.request('get', route, payload)
 
 
-    def get_parts_list(self, did, wvm):
+    def get_parts_list(self, did, wvm, wvm_type='w'):
         '''
         Get list  of parts in a document
 
         Args:
             - did (str): Document ID
             - wvm (str): Workspace ID or version id or microversion id
+            - wvm_type (str): type for wvm ("w", "v", or "m")
 
         Returns:
             - requests.Response: Onshape response data
@@ -245,11 +246,11 @@ class ClientExtended(Client):
         '''
 
         payload = {}
-        route = '/api/parts/d/' + did + '/w/' + wvm
+        route = '/api/parts/d/' + did + '/' + wvm_type + '/' + wvm
         return self._api.request('get', route, payload)
 
 
-    def set_part_metadata(self, did, wvm, eid, part_id, payload=None):
+    def set_part_metadata(self, did, wvm, eid, part_id, payload=None, wvm_type='w'):
         """
         set metadata value for an OnShape part
 
@@ -273,7 +274,28 @@ class ClientExtended(Client):
 
         payload_json = json.dumps(payload)
 
-        route = '/api/parts/d/{}/w/{}/e/{}/partid/{}/metadata'.format(did, wvm, eid, part_id)
+        route = '/api/parts/d/{}/{}/{}/e/{}/partid/{}/metadata'.format(did, wvm_type, wvm, eid, part_id)
+        return self._api.request('post', route, body=payload_json)
+
+
+    def batch_update_part_metadata(self, did, wvm, wvm_type, payload=None):
+        """
+        set metadata value for an OnShape part
+
+        - did (str): Document ID
+        - wvm (str): Workspace ID or version id or microversion id
+        - payload: dictionary containing key/value pairs to set on the entity
+
+        Returns:
+            - requests.Response: Onshape response data
+
+        /parts/d/: did/[wvm]/:wvm
+        """
+        if payload is None:
+            payload = {}
+
+        payload_json = json.dumps(payload)
+        route = '/api/parts/d/{}/{}/{}'.format(did, wvm, wvm_type)
         return self._api.request('post', route, body=payload_json)
 
 
@@ -297,6 +319,48 @@ class ClientExtended(Client):
         if part_ids is not None:
             query = {'partIds': ','.join(part_ids)}
         return self._api.request('get', route, query)
+
+
+    def get_element_metadata(self, did, wv, eid, wvm_type='w', linkDocumentId=None):
+        """
+        get metadata values for an OnShape list of part
+
+        - did (str): Document ID
+        - wv (str): Workspace ID or version id
+        - eid (str): Element ID
+        - wvm_type (str): 'w' for workspace, 'v' for version
+
+        Returns:
+            - requests.Response: Onshape response data
+
+        """
+        route = '/api/elements/d/{}/{}/{}/e/{}//metadata'.format(did, wvm_type, wv, eid)
+        query = {}
+        if linkDocumentId is not None:
+            query = {'linkDocumentId': linkDocumentId}
+        return self._api.request('get', route, query)
+
+
+    def get_part_metadata(self, did, wvm, eid, part_id, wvm_type='w', linkDocumentId=None):
+        """
+        get metadata values for an OnShape list of part
+
+        - did (str): Document ID
+        - wvm (str): Workspace ID or version id or microversion id
+        - eid (str): Element ID
+        - part_id ([str]):  the id of the part ids to return
+        - wvm_type (str): 'w' for workspace, 'v' for version, 'm' for microversion
+
+        Returns:
+            - requests.Response: Onshape response data
+
+        """
+        route = '/api/parts/d/{}/{}/{}/e/{}/partid/{}/metadata'.format(did, wvm_type, wvm, eid, part_id)
+        query = {}
+        if linkDocumentId is not None:
+            query = {'linkDocumentId': linkDocumentId}
+        return self._api.request('get', route, query)
+
 
 
     def set_parts_metadata(self, did, wvm, payload=None):
