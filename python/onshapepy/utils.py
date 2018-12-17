@@ -76,7 +76,7 @@ def log(msg, level=0):
     logger.log(lvl, msg)
 
 
-def parse_url(url):
+def parse_url(url, w_required=False):
     """
     parse an Onshape document URL into the components: did, wvm and eid.
 
@@ -94,10 +94,23 @@ def parse_url(url):
     try:
         if split_list[3] == 'documents':
             did = split_list[4]
-        if split_list[5] == 'w':
+        else:
+            raise RuntimeError("Bad URL -- no documents specified")
+
+        if (w_required and split_list[5] == 'w'):
             wvm = split_list[6]
+        elif split_list[5] in { 'v', 'm' }:
+            wvm = split_list[6]
+        else:
+            if w_required is true:
+                raise RuntimeError("Bad URL -- no w specified")
+            else:
+                raise RuntimeError("Bad URL -- no wvm specified")
+
         if split_list[7] == 'e':
             eid = split_list[8]
+        else:
+            raise RuntimeError("Bad URL -- no eid specified")
     except (IndexError):
         pass    # fail on first index error and keep items set to None from there on
 

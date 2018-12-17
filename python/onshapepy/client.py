@@ -37,7 +37,7 @@ class Client():
 
         Args:
             - stack (str, default='https://cad.onshape.com'): Base URL
-            - creds (str, default='./cred.json'): location of OnShape credentials (acccess key and secret key)
+            - creds (str, default='./cred.json'): location of OnShape credentials (access key and secret key)
             - logging (bool, default=True): Turn logging on or off
         '''
 
@@ -117,7 +117,6 @@ class Client():
             - requests.Response: Onshape response data
         '''
 
-        # return self._api.request('get', '/api/documents')
         return self._api.request('get', '/api/documents', query)
 
     def create_assembly(self, did, wid, name='My Assembly'):

@@ -16,6 +16,7 @@ for more information about the API see:
     this code uses  onshapepy to do authentication:
         https://github.com/lwanger/onshapepy
 
+Text-based progress bars shown if tqdm is installed
 Len Wanger
 Copyright Impossible Objects, 2018
 """
@@ -30,6 +31,13 @@ from onshapepy.ext_client import ClientExtended
 from onshapepy.utils import parse_url
 import cooked_input as ci
 
+# If TQDM is installed then import it to display progress bars
+try:
+    from tqdm import tqdm
+    tqdm_installed = True
+except (ImportError):
+    tqdm_installed = False
+
 # DID, WVM and EID for Part numbering test example model
 # DEFAULT_URL="https://cad.onshape.com/documents/d31dbb77700b695251588ff2/w/2c28968f83a53f9631d066fa/e/24f03732ef009163ad541a90"
 
@@ -43,8 +51,8 @@ DEFAULT_URL="https://cad.onshape.com/documents/380c689c8f030496317ad561/w/00debd
 # DEFAULT_URL="https://cad.onshape.com/documents/3d51153e276619e952362208/w/542e0a82b6fb6c53aa2d5bb3/e/c541ad347688e4da725f3c4c"
 
 # Regular expression for default part numbering scheme (IOxxxx, where x is a digit)
-# DEFAULT_PN_RE = "^IO\d{4}$"   # IO style part numbers
-DEFAULT_PN_RE = "^LW-\d{3}$"    # LW-123 style part numbers
+DEFAULT_PN_RE = "^IO\d{4}$"   # IO style part numbers
+# DEFAULT_PN_RE = "^LW-\d{3}$"    # LW-123 style part numbers
 
 HELP_STR = """
 OnShape Part Number fixing utility.
@@ -86,7 +94,7 @@ def get_url_and_pn_re(default=DEFAULT_URL, default_re=DEFAULT_PN_RE, use_gui=Tru
         url = ci.get_string(prompt="What Onshape document URL do want to renumber", default=default)
         pn_re = ci.get_string(prompt="Regular expression for part names to set as part number", default=DEFAULT_PN_RE)
 
-        did, wvm, eid = parse_url(url)
+        did, wvm, eid = parse_url(url, w_required=True)
         return did, wvm, eid, pn_re
     else:   # use tkinter
         # TODO -- need to clean up -- add instructions, tables, etc.
@@ -122,8 +130,26 @@ def get_url_and_pn_re(default=DEFAULT_URL, default_re=DEFAULT_PN_RE, use_gui=Tru
         url = url_str_var.get()
         pn_re = re_str_var.get()
         window.destroy()
-        did, wvm, eid = parse_url(url)
+        did, wvm, eid = parse_url(url, w_required=True)
         return did, wvm, eid, pn_re
+
+
+def rewrite_part(part):
+    part_id = part['itemSource']['partId']
+    wvm_type = part['itemSource']['wvmType']
+    part_wvm = part['itemSource']['wvmId']
+    part_did = part['itemSource']['documentId']
+    part_eid = part['itemSource']['elementId']
+    payload = {'partNumber': part['name']}
+
+    result = c.set_part_metadata(part_did, part_wvm, part_eid, part_id, payload, wvm_type)
+    if not result.ok:
+        print('Error: Could not set part number for parts={} (result code={}, err={})'.format(part["name"],
+                                                                                              result.status_code,
+                                                                                              result.reason))
+        return False
+
+    return True
 
 
 def rewrite_part_numbers(did, parts):
@@ -139,20 +165,22 @@ def rewrite_part_numbers(did, parts):
     print(f'Re-writing part numbers for did={did}\n')
 
     if parts is not None:
-        for part in parts:
-            part_id = part['itemSource']['partId']
-            wvm_type = part['itemSource']['wvmType']
-            part_wvm = part['itemSource']['wvmId']
-            part_did = part['itemSource']['documentId']
-            part_eid = part['itemSource']['elementId']
+        if tqdm_installed is True:
+            with tqdm(total=len(parts)) as pbar:
+                for i, part in enumerate(parts):
+                    pbar.set_description(f'Rewriting part {part["name"]}')
+                    result = rewrite_part(part)
+                    pbar.update(i)
 
-            payload = {'partNumber': part['name']}
-            print('Rewriting part number for part {}'.format(part["name"]))
+                    if result is False:
+                        return False
+        else:
+            for part in parts:
+                print('Rewriting part number for part {}'.format(part["name"]))
+                result = rewrite_part(part)
 
-            result = c.set_part_metadata(part_did, part_wvm, part_eid, part_id, payload, wvm_type)
-            if not result.ok:
-                print('Error: Could not set part number for parts={} (result code={}, err={})'.format(part["name"], result.status_code, result.reason))
-                return False
+                if result is False:
+                    return False
 
     return True
 
@@ -171,6 +199,11 @@ if __name__ == '__main__':
     print('\nFetching part information from Onshape...')
     start_time = datetime.datetime.now()
     bom = c.get_assembly_bom(did, wvm, eid)
+
+    if bom.ok is False:
+        print(f'\n\nError: Could not fetch the BOM (status code={bom.status_code}, reason={bom.reason})\n\n')
+        sys.exit(1)
+
     bom_json = json.loads(bom.text)
     end_time = datetime.datetime.now()
 
@@ -179,11 +212,15 @@ if __name__ == '__main__':
         if should_set_part_number(part['partNumber'], part['name'], pn_re):
             filtered_parts.append(part)
 
+    if len(filtered_parts) == 0:
+        print(f'\n\nNo parts matching the regular expression without a part number found (re={pn_re}).\n\n')
+        sys.exit(0)
+
     time_delta = end_time - start_time
     print(f'Onshape call time = {str(time_delta)} seconds')
     fields = ['name', 'partNumber', 'revision', 'description', 'partId', 'elementId']
     field_names = ['Name', 'Part Number', 'Revision', 'Description', 'Part Id', 'Element Id']
-    style = ci.TableStyle(show_border=True, hrules=ci.RULE_NONE)
+    style = ci.TableStyle(show_border=True, hrules=ci.RULE_NONE, rows_per_page=None)
     tbl = ci.create_table(filtered_parts, fields=fields, field_names=fields, gen_tags=None, item_data=None,
                           add_item_to_item_data=True, title=None, prompt=None, default_choice=None, default_str=None,
                           default_action='table_item', style=style)

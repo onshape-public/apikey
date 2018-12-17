@@ -17,6 +17,7 @@ TODO:
     - Export as PDF from ReportLab
     - use text-align:left and vertical align:top in style tag..., not align="left"
     - Add search bar to docs...
+    - Add toggle to toc to show deprecated
 
 
 Len Wanger
