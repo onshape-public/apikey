@@ -185,17 +185,7 @@ def rewrite_part_numbers(did, parts):
     return True
 
 
-if __name__ == '__main__':
-    stacks = {'cad': 'https://cad.onshape.com'}
-    c = ClientExtended(stack=stacks['cad'], logging=False)
-
-    print(HELP_STR)
-    did, wvm, eid, pn_re = get_url_and_pn_re(default=DEFAULT_URL)
-
-    filtered_parts = None
-    linked_docs = None
-
-    # get part list
+def get_bom(c, did, wvm, eid, pn_re):
     print('\nFetching part information from Onshape...')
     start_time = datetime.datetime.now()
     bom = c.get_assembly_bom(did, wvm, eid)
@@ -206,20 +196,12 @@ if __name__ == '__main__':
 
     bom_json = json.loads(bom.text)
     end_time = datetime.datetime.now()
-
-    filtered_parts = []
-    for part in bom_json['bomTable']['items']:
-        if should_set_part_number(part['partNumber'], part['name'], pn_re):
-            filtered_parts.append(part)
-
-    if len(filtered_parts) == 0:
-        print(f'\n\nNo parts matching the regular expression without a part number found (re={pn_re}).\n\n')
-        sys.exit(0)
-
     time_delta = end_time - start_time
-    print(f'Onshape call time = {str(time_delta)} seconds')
-    fields = ['name', 'partNumber', 'revision', 'description', 'partId', 'elementId']
-    field_names = ['Name', 'Part Number', 'Revision', 'Description', 'Part Id', 'Element Id']
+
+    return bom_json, time_delta
+
+
+def show_pre_table(fields):
     style = ci.TableStyle(show_border=True, hrules=ci.RULE_NONE, rows_per_page=None)
     tbl = ci.create_table(filtered_parts, fields=fields, field_names=fields, gen_tags=None, item_data=None,
                           add_item_to_item_data=True, title=None, prompt=None, default_choice=None, default_str=None,
@@ -227,6 +209,8 @@ if __name__ == '__main__':
     print('\nParts identified to set:')
     tbl.show_table()
 
+
+def rewrite_parts_and_show_post_table(fields):
     if ci.get_yes_no(prompt='Do you want to re-write the part numbers with the part names', default='no') == 'yes':
         rewrite_part_numbers(did, filtered_parts)
 
@@ -241,6 +225,7 @@ if __name__ == '__main__':
             part['partId'] = part['itemSource']['partId']
             part['elementId'] = part['itemSource']['elementId']
 
+        style = ci.TableStyle(show_border=True, hrules=ci.RULE_NONE, rows_per_page=None)
         tbl = ci.create_table(changed_parts, fields=fields, field_names=fields, gen_tags=None, item_data=None,
                               add_item_to_item_data=True, title=None, prompt=None, default_choice=None,
                               default_str=None, default_action='table_item', style=style)
@@ -249,3 +234,31 @@ if __name__ == '__main__':
     else:
         print('Exiting without re-writing part numbers\n')
         sys.exit(0)
+
+
+if __name__ == '__main__':
+    stacks = {'cad': 'https://cad.onshape.com'}
+    c = ClientExtended(stack=stacks['cad'], logging=False)
+
+    print(HELP_STR)
+    did, wvm, eid, pn_re = get_url_and_pn_re(default=DEFAULT_URL)
+
+    filtered_parts = None
+    linked_docs = None
+
+    bom_json, time_delta = get_bom(c, did, wvm, eid, pn_re)
+
+    filtered_parts = []
+    for part in bom_json['bomTable']['items']:
+        if should_set_part_number(part['partNumber'], part['name'], pn_re):
+            filtered_parts.append(part)
+
+    if len(filtered_parts) == 0:
+        print(f'\n\nNo parts matching the regular expression without a part number found (re={pn_re}).\n\n')
+        sys.exit(0)
+
+    print(f'Onshape call time = {str(time_delta)} seconds')
+    fields = ['name', 'partNumber', 'revision', 'description', 'partId', 'elementId']
+    show_pre_table(fields)
+
+    rewrite_parts_and_show_post_table(fields)
