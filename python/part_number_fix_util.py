@@ -188,7 +188,8 @@ def rewrite_part_numbers(did, parts):
 def get_bom(c, did, wvm, eid, pn_re):
     print('\nFetching part information from Onshape...')
     start_time = datetime.datetime.now()
-    bom = c.get_assembly_bom(did, wvm, eid)
+    # bom = c.get_assembly_bom(did, wvm, eid)
+    bom = c.get_assembly_bom(did, wvm, eid, multi_level=False)
 
     if bom.ok is False:
         print(f'\n\nError: Could not fetch the BOM (status code={bom.status_code}, reason={bom.reason})\n\n')
@@ -237,6 +238,8 @@ def rewrite_parts_and_show_post_table(fields):
 
 
 if __name__ == '__main__':
+    print('WARNING: Does not find parts without part names that are assemblies')
+
     stacks = {'cad': 'https://cad.onshape.com'}
     c = ClientExtended(stack=stacks['cad'], logging=False)
 

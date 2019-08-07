@@ -222,9 +222,14 @@ class ClientExtended(Client):
         '''
 
         payload = {}
-        payload['indented'] = indented
         payload['generateIfAbsent'] = generate_if_absent
         payload['multiLevel'] = multi_level
+
+        if multi_level is True:
+            # multi-level is ignored if indented is False!
+            payload['indented'] = True
+        else:
+            payload['indented'] = indented
 
         route = '/api/assemblies/d/' + did + '/w/' + wvm + '/e/' + eid + '/bom'
         return self._api.request('get', route, payload)
