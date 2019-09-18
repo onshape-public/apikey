@@ -279,7 +279,10 @@ class ClientExtended(Client):
 
         payload_json = json.dumps(payload)
 
-        route = '/api/parts/d/{}/{}/{}/e/{}/partid/{}/metadata'.format(did, wvm_type, wvm, eid, part_id)
+        if len(part_id):
+            route = '/api/parts/d/{}/{}/{}/e/{}/partid/{}/metadata'.format(did, wvm_type, wvm, eid, part_id)
+        else:
+            route = '/api/parts/d/{}/{}/{}/e/{}/metadata'.format(did, wvm_type, wvm, eid, part_id)
         return self._api.request('post', route, body=payload_json)
 
 
@@ -368,9 +371,9 @@ class ClientExtended(Client):
 
 
 
-    def set_parts_metadata(self, did, wvm, payload=None):
+    def set_metadata(self, did, wvm, wvm_type='w', payload=None):
         """
-        set metadata value for an OnShape list of parts
+        set metadata value for an OnShape document
 
         - did (str): Document ID
         - wvm (str): Workspace ID or version id or microversion id
@@ -382,13 +385,38 @@ class ClientExtended(Client):
         Note: payload is required to have elementId and partID for every part. All other metadata values are
             optional (e.g. partNumber, material, appearance, etc.).
 
-        An example payload to set the partNumber for each part (assuming the part list was retrieved with get_parts_list:
+            An example payload to set the partNumber for each part (assuming the part list was retrieved with get_parts_list:
 
-            payload = [{'elementId': part['elementId'], 'partId': part['partId'], 'partNumber': f'part-{id}' } for idx, part in enumerated(parts)]
+                # wrong: payload = [{'elementId': part['elementId'], 'partId': part['partId'], 'partNumber': f'part-{id}' } for idx, part in enumerated(parts)]
+
+                        / metadata / d /: did / [wv] /:wv
+
+            # payload description is wrong...
+                payload =
+                        {
+                            "items": [
+                                {
+                                    "properties": [
+                                        {
+                                             "value": "new_description_another",
+                                             "propertyId": "57f3fb8efa3416c06701d60e"
+                                         }
+                                    ],
+                                    "href": "https://cad.onshape.com/api/metadata/d/624cda69347788edc2259a64/w/c09ce0ce9af4ea6f69323ab7/e/d252e442e4cb6c22e49f4754?configuration=List_EwLwXQKstmDIZM%3Danother%3Bbool%3Dfalse%3Bsize%3D2+in"
+                                },
+                                {
+                                    "properties": [
+                                            { "value": "new_description_yet_another", "propertyId": "57f3fb8efa3416c06701d60e" }
+                                    ],
+                                    "href": "https://cad.onshape.com/api/metadata/d/624cda69347788edc2259a64/w/c09ce0ce9af4ea6f69323ab7/e/d252e442e4cb6c22e49f4754?configuration=List_EwLwXQKstmDIZM%3Danother%3Bbool%3Dtrue%3Bsize%3D2+in"
+                                }
+                            ]
+                        }
+
         """
         if payload is None:
             payload = []
 
         payload_json = json.dumps(payload)
-        route = '/api/parts/d/{}/w/{}'.format(did, wvm)
+        route = '/api/metadata/d/{}/w/{}'.format(did, wvm)
         return self._api.request('post', route, body=payload_json)
