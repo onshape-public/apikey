@@ -6,7 +6,14 @@
   "author": {
     "name": "Onshape Partner-API Team"
   },
+  "scripts": {
+    "start": "echo \"Error: no test specified\" && exit 1",
+    "test": "node example/server.js"
+  },
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
     "minimist": "^1.2.5"
   }
 }
