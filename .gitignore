@@ -20,3 +20,4 @@ env
 # api keys
 node/config/apikey.js
 python/creds.json
+.vscode/settings.json
