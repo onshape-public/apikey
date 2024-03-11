@@ -2,7 +2,7 @@ appnope==0.1.0
 closure-linter==2.3.13
 decorator==4.0.9
 pyreadline==2.1
-ipython==4.1.2
+ipython==7.16.3
 ipython-genutils==0.1.0
 licenser==1.2.3
 mercurial==4.1.3
