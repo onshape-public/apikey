@@ -147,7 +147,7 @@ class Onshape():
             'Date': date,
             'On-Nonce': nonce,
             'Authorization': auth,
-            'User-Agent': 'Onshape Python Sample App',
+            'User-Agent': 'Onshape Python Support App',
             'Accept': 'application/json'
         }
 
